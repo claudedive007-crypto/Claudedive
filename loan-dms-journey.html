@@ -1,0 +1,1045 @@
+<title>The Loan Journey</title>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0d1b2e; --ink-2:#3a4a62; --ink-3:#6c7d94;
+    --paper:#eef2f8; --surface:#ffffff; --line:#dbe3ee; --line-2:#e9eef6;
+    --navy:#0a1730; --navy-2:#0f2148; --navy-3:#17356b; --navy-4:#20458a;
+    --brand:#3763e0; --brand-dk:#254bb8; --brand-lt:#e7eefc;
+    --amber:#c9820f; --amber-lt:#fbf1de;
+    --rose:#d1394f; --rose-lt:#fbe7ea;
+    --emerald:#0f9d63; --emerald-lt:#e3f6ec;
+    --violet:#6a4fd1; --violet-lt:#efebfb;
+    --teal:#0e7c86; --teal-lt:#e2f2f3;
+    --shadow-s:0 1px 2px rgba(10,23,48,.06), 0 1px 3px rgba(10,23,48,.05);
+    --shadow-m:0 10px 30px rgba(10,23,48,.14), 0 2px 8px rgba(10,23,48,.08);
+    --font-d:'Sora',-apple-system,'Segoe UI',sans-serif;
+    --font-b:'IBM Plex Sans',-apple-system,'Segoe UI',sans-serif;
+    --font-m:'IBM Plex Mono','SF Mono',ui-monospace,monospace;
+    color-scheme: dark;
+  }
+  *{box-sizing:border-box;}
+  body{
+    background: radial-gradient(ellipse at 50% -10%, #10254a 0%, #060d1c 62%, #030711 100%);
+    min-height:100%; margin:0; font-family:var(--font-b); color:#fff;
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+  }
+  #viewport{ width:100vw; height:100vh; display:flex; align-items:center; justify-content:center; position:relative; }
+  #stage{
+    width:1920px; height:1080px; position:relative; overflow:hidden; flex-shrink:0;
+    background:var(--paper); border-radius:6px; box-shadow:0 40px 120px rgba(0,0,0,.55);
+    transform-origin: center center;
+  }
+
+  /* ---------- scenes ---------- */
+  .scene{ position:absolute; inset:0; opacity:0; pointer-events:none; display:flex; flex-direction:column; }
+  .scene.active{ opacity:1; pointer-events:auto; }
+  .scene.dark{ background:linear-gradient(155deg,var(--navy) 0%,var(--navy-2) 58%,#081226 100%); color:#fff; }
+  .scene.light{ background:var(--paper); color:var(--ink); }
+  .scene-body{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:150px 140px 200px; position:relative; }
+  .scene.light .scene-body{ padding-top:170px; }
+
+  .eyebrow{ font-family:var(--font-m); font-size:15px; letter-spacing:.16em; text-transform:uppercase; font-weight:600; opacity:.72; margin-bottom:14px; }
+  .dark .eyebrow{ color:#8fb0e8; }
+  .light .eyebrow{ color:var(--brand-dk); }
+  h1.headline{ font-family:var(--font-d); font-size:56px; font-weight:800; letter-spacing:-.02em; line-height:1.08; text-wrap:balance; margin:0 0 16px; }
+  h2.headline{ font-family:var(--font-d); font-size:38px; font-weight:750; letter-spacing:-.015em; line-height:1.15; text-wrap:balance; margin:0 0 14px; }
+  .sub{ font-size:20px; line-height:1.55; max-width:760px; text-align:center; }
+  .dark .sub{ color:#c7d6f0; }
+  .light .sub{ color:var(--ink-2); }
+  .center{ text-align:center; display:flex; flex-direction:column; align-items:center; }
+
+  /* ---------- reveal utility ---------- */
+  .reveal{ opacity:0; }
+
+  /* ---------- avatars / roles ---------- */
+  .avatar{ width:74px; height:74px; border-radius:50%; display:grid; place-items:center; font-family:var(--font-d); font-weight:750; font-size:24px; flex-shrink:0; border:2px solid rgba(255,255,255,.16); }
+  .avatar.sm{ width:44px; height:44px; font-size:15px; }
+  .role-pill{ display:inline-flex; align-items:center; gap:8px; padding:6px 16px 6px 8px; border-radius:99px; font-size:14px; font-weight:700; font-family:var(--font-b); }
+  .role-pill .dot{ width:10px; height:10px; border-radius:50%; }
+  .role-customer{ background:rgba(255,255,255,.08); color:#dfe8f7; border:1px solid rgba(255,255,255,.22); }
+  .role-branch{ background:var(--brand); color:#fff; }
+  .role-reviewer{ background:var(--amber); color:#2c1c02; }
+  .role-approver{ background:var(--emerald); color:#042416; }
+  .role-ops{ background:var(--violet); color:#fff; }
+  .role-mgmt{ background:var(--teal); color:#fff; }
+  .role-audit{ background:var(--navy-4); color:#fff; border:1px solid rgba(255,255,255,.28); }
+  .role-system{ background:rgba(255,255,255,.08); color:#c7d6f0; border:1px solid rgba(255,255,255,.22); }
+  .avatar.a-branch{ background:var(--brand); color:#fff; }
+  .avatar.a-reviewer{ background:var(--amber); color:#2c1c02; }
+  .avatar.a-approver{ background:var(--emerald); color:#042416; }
+  .avatar.a-ops{ background:var(--violet); color:#fff; }
+  .avatar.a-mgmt{ background:var(--teal); color:#fff; }
+  .avatar.a-audit{ background:var(--navy-4); color:#fff; }
+  .avatar.a-customer{ background:rgba(255,255,255,.12); color:#fff; }
+
+  /* ---------- cards ---------- */
+  .card{ background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:22px 26px; box-shadow:var(--shadow-m); }
+  .card-dark{ background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.16); border-radius:18px; padding:24px 28px; backdrop-filter:blur(6px); }
+  .badge{ display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:700; padding:4px 12px; border-radius:99px; white-space:nowrap; font-family:var(--font-b); }
+  .badge.green{ background:var(--emerald-lt); color:#0a7d56; }
+  .badge.red{ background:var(--rose-lt); color:var(--rose); }
+  .badge.amber{ background:var(--amber-lt); color:var(--amber); }
+  .badge.blue{ background:var(--brand-lt); color:var(--brand-dk); }
+  .badge.gray{ background:var(--line-2); color:var(--ink-3); }
+  .badge.violet{ background:var(--violet-lt); color:var(--violet); }
+  .mono{ font-family:var(--font-m); }
+
+  /* ---------- caption chip (visual + short explanation, per scene) ---------- */
+  .beat{ display:flex; align-items:center; gap:10px; font-size:16px; font-weight:600; margin-top:22px; padding:10px 18px; border-radius:99px; }
+  .dark .beat{ background:rgba(255,255,255,.08); color:#e7edf9; border:1px solid rgba(255,255,255,.16); }
+  .light .beat{ background:#fff; color:var(--ink-2); border:1px solid var(--line); box-shadow:var(--shadow-s); }
+  .beat .k{ width:7px; height:7px; border-radius:50%; background:var(--brand); flex-shrink:0; }
+
+  /* ---------- arrows / flow ---------- */
+  .flow{ display:flex; align-items:center; justify-content:center; gap:0; }
+  .flow.vert{ flex-direction:column; }
+  .arrow-v{ width:2px; height:34px; background:linear-gradient(#3763e0,#6a4fd1); position:relative; margin:2px 0; }
+  .arrow-v::after{ content:""; position:absolute; bottom:-1px; left:50%; transform:translateX(-50%); border:6px solid transparent; border-top-color:#6a4fd1; }
+  .dark .arrow-v{ background:linear-gradient(rgba(255,255,255,.55),rgba(255,255,255,.2)); }
+  .dark .arrow-v::after{ border-top-color:rgba(255,255,255,.35); }
+  .arrow-h{ height:2px; flex:1; min-width:40px; background:linear-gradient(90deg,#c3d2ea,#3763e0); position:relative; margin:0 6px; }
+  .arrow-h::after{ content:""; position:absolute; right:-1px; top:50%; transform:translateY(-50%); border:6px solid transparent; border-left-color:#3763e0; }
+
+  /* ---------- handoff card ---------- */
+  .handoff{ width:460px; padding:34px 30px 28px; text-align:center; }
+  .handoff .htitle{ font-family:var(--font-m); font-size:13px; letter-spacing:.18em; text-transform:uppercase; color:#8fb0e8; font-weight:600; margin-bottom:22px; }
+  .handoff .hrole{ font-family:var(--font-d); font-size:22px; font-weight:700; }
+  .handoff .hsys{ display:inline-flex; align-items:center; gap:8px; font-family:var(--font-m); font-size:13px; letter-spacing:.06em; color:#c7d6f0; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); padding:6px 14px; border-radius:10px; margin:4px 0; }
+  .handoff .granted{ margin-top:20px; display:inline-flex; align-items:center; gap:8px; background:var(--emerald-lt); color:#0a7d56; font-weight:700; font-size:14px; padding:7px 16px; border-radius:99px; }
+
+  /* ---------- login panel ---------- */
+  .login-panel{ width:420px; }
+  .login-panel .lrow{ display:flex; align-items:center; gap:12px; font-size:15px; padding:9px 0; border-bottom:1px solid var(--line-2); }
+  .dark .login-panel .lrow{ border-bottom-color:rgba(255,255,255,.1); }
+  .login-panel .lrow:last-child{ border-bottom:none; }
+  .check{ width:20px; height:20px; border-radius:50%; background:var(--emerald); display:grid; place-items:center; flex-shrink:0; }
+  .check svg{ width:12px; height:12px; }
+
+  /* ---------- workspace chrome mimic (in-app screens) ---------- */
+  .app-window{ width:1180px; background:var(--surface); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow-m); overflow:hidden; }
+  .app-topbar{ height:52px; background:#fff; border-bottom:1px solid var(--line); display:flex; align-items:center; padding:0 20px; gap:14px; }
+  .app-dot{ width:9px; height:9px; border-radius:50%; }
+  .app-brand{ font-family:var(--font-d); font-weight:750; font-size:14px; color:var(--ink); letter-spacing:-.01em; }
+  .app-userchip{ margin-left:auto; display:flex; align-items:center; gap:9px; }
+  .app-body{ padding:26px 30px 30px; }
+  .crumb{ font-size:12px; color:var(--ink-3); font-weight:600; margin-bottom:6px; font-family:var(--font-m); letter-spacing:.02em; }
+
+  /* ---------- doc pipeline stepper ---------- */
+  .stepper{ display:flex; align-items:flex-start; gap:0; width:100%; max-width:1200px; }
+  .step{ flex:1; display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px; position:relative; }
+  .step .snum{ width:52px; height:52px; border-radius:50%; background:var(--brand-lt); color:var(--brand-dk); display:grid; place-items:center; font-family:var(--font-d); font-weight:800; font-size:18px; border:2px solid var(--brand); }
+  .step .slabel{ font-size:15px; font-weight:700; color:var(--ink); }
+  .step .sdesc{ font-size:12.5px; color:var(--ink-3); max-width:150px; }
+  .step-connector{ flex:0 0 auto; width:60px; height:2px; background:linear-gradient(90deg,#c3d2ea,#3763e0); margin-top:26px; position:relative; }
+  .step-connector::after{ content:""; position:absolute; right:-1px; top:50%; transform:translateY(-50%); border:5px solid transparent; border-left-color:#3763e0; }
+  .stepper.violet .snum{ background:var(--violet-lt); color:var(--violet); border-color:var(--violet); }
+  .stepper.violet .step-connector{ background:linear-gradient(90deg,#d9cff5,#6a4fd1); }
+  .stepper.violet .step-connector::after{ border-left-color:#6a4fd1; }
+
+  /* ---------- doc chips ---------- */
+  .docrow{ display:flex; gap:14px; flex-wrap:wrap; justify-content:center; }
+  .docchip{ width:168px; background:#fff; border:1px solid var(--line); border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:8px; box-shadow:var(--shadow-s); }
+  .docchip .dicon{ width:34px; height:34px; border-radius:9px; background:var(--brand-lt); color:var(--brand-dk); display:grid; place-items:center; }
+  .docchip .dname{ font-size:13.5px; font-weight:700; color:var(--ink); }
+
+  /* ---------- checklist ---------- */
+  .checklist{ width:520px; display:flex; flex-direction:column; gap:2px; }
+  .cl-row{ display:flex; align-items:center; gap:14px; padding:13px 4px; border-bottom:1px solid var(--line-2); }
+  .cl-row:last-child{ border-bottom:none; }
+  .cl-row .cname{ flex:1; font-size:15.5px; font-weight:600; color:var(--ink); }
+  .cl-icon{ width:26px; height:26px; border-radius:50%; display:grid; place-items:center; flex-shrink:0; }
+  .cl-icon.ok{ background:var(--emerald-lt); color:#0a7d56; }
+  .cl-icon.warn{ background:var(--amber-lt); color:var(--amber); }
+
+  /* ---------- progress ring ---------- */
+  .ring-wrap{ position:relative; width:110px; height:110px; }
+  .ring-wrap svg{ transform:rotate(-90deg); }
+  .ring-pct{ position:absolute; inset:0; display:grid; place-items:center; font-family:var(--font-d); font-weight:800; font-size:22px; color:var(--emerald); }
+
+  /* ---------- stat tiles ---------- */
+  .stat-row{ display:flex; gap:16px; }
+  .stat-tile{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:16px 20px; min-width:150px; box-shadow:var(--shadow-s); }
+  .stat-tile .v{ font-family:var(--font-d); font-size:30px; font-weight:800; color:var(--ink); line-height:1; }
+  .stat-tile .k{ font-size:12.5px; color:var(--ink-3); margin-top:6px; font-weight:600; }
+
+  /* ---------- portfolio ---------- */
+  .portfolio{ display:flex; gap:14px; }
+  .ploan{ width:170px; background:#fff; border:1px solid var(--line); border-radius:14px; padding:14px; box-shadow:var(--shadow-s); }
+  .ploan .pid{ font-family:var(--font-m); font-size:12px; color:var(--ink-3); }
+  .ploan .pname{ font-size:14px; font-weight:700; color:var(--ink); margin:3px 0 8px; }
+  .ploan.hi{ border:2px solid var(--brand); box-shadow:0 0 0 4px var(--brand-lt); }
+
+  /* ---------- timeline (audit) ---------- */
+  .tl{ width:1160px; display:flex; flex-direction:column; gap:0; }
+  .tl-item{ display:flex; gap:16px; padding:6px 0; }
+  .tl-rail{ display:flex; flex-direction:column; align-items:center; width:16px; flex-shrink:0; }
+  .tl-node{ width:11px; height:11px; border-radius:50%; background:var(--navy-4); border:2.5px solid #6f93d8; flex-shrink:0; }
+  .tl-line{ flex:1; width:2px; background:rgba(255,255,255,.18); margin-top:2px; }
+  .tl-item:last-child .tl-line{ display:none; }
+  .tl-card{ flex:1; display:flex; align-items:center; gap:16px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14); border-radius:10px; padding:8px 16px; }
+  .tl-step{ font-family:var(--font-d); font-weight:700; font-size:13.5px; width:225px; flex-shrink:0; }
+  .tl-user{ width:230px; flex-shrink:0; font-size:12px; color:#c7d6f0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tl-time{ width:175px; flex-shrink:0; font-family:var(--font-m); font-size:11.5px; color:#9db4d4; }
+
+  /* ---------- recap row ---------- */
+  .recap{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; max-width:1200px; }
+  .recap-item{ display:flex; align-items:center; gap:8px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.16); padding:9px 16px; border-radius:99px; font-size:14px; font-weight:600; }
+  .recap-item .cdone{ width:18px; height:18px; border-radius:50%; background:var(--emerald); display:grid; place-items:center; flex-shrink:0; }
+
+  /* ---------- final journey map (two aligned rows: dots, then labels) ---------- */
+  .jgrid{ display:flex; flex-direction:column; align-items:center; }
+  .jrow-dots{ display:flex; align-items:center; }
+  .jrow-labels{ display:flex; align-items:flex-start; margin-top:9px; }
+  .jcol{ width:80px; display:flex; justify-content:center; flex-shrink:0; }
+  .jcol .jdot{ width:13px; height:13px; border-radius:50%; }
+  .jcol .jlabel{ font-size:10.5px; font-weight:700; text-align:center; color:#dfe8f7; letter-spacing:.01em; line-height:1.25; }
+  .jspace{ width:15px; flex-shrink:0; display:flex; align-items:center; }
+  .jspace .jarrow{ width:15px; height:2px; background:rgba(255,255,255,.28); }
+
+  /* ---------- toast/notification ---------- */
+  .toast-card{ display:flex; align-items:center; gap:14px; background:#fff; border:1px solid var(--line); border-radius:14px; padding:14px 18px; box-shadow:var(--shadow-m); width:420px; }
+  .toast-card .bell{ width:38px; height:38px; border-radius:10px; background:var(--rose-lt); color:var(--rose); display:grid; place-items:center; flex-shrink:0; }
+  .toast-card .ttitle{ font-weight:700; font-size:14.5px; color:var(--ink); }
+  .toast-card .tsub{ font-size:12.5px; color:var(--ink-3); margin-top:2px; }
+
+  /* ================= CHROME ================= */
+  #chrome-top{ position:absolute; top:0; left:0; right:0; height:92px; z-index:80; display:flex; align-items:center; padding:0 36px; gap:26px;
+    background:linear-gradient(180deg, rgba(4,9,20,.78) 0%, rgba(4,9,20,0) 100%); pointer-events:none; }
+  #chrome-top > *{ pointer-events:auto; }
+  .brandmark{ display:flex; align-items:center; gap:10px; }
+  .brandmark .bm-icon{ width:34px; height:34px; border-radius:9px; background:linear-gradient(145deg,#3763e0,#6a4fd1); display:grid; place-items:center; box-shadow:0 3px 10px rgba(55,99,224,.4); }
+  .brandmark .bm-text{ font-family:var(--font-d); font-weight:750; font-size:15px; color:#fff; letter-spacing:-.01em; }
+  .brandmark .bm-sub{ font-family:var(--font-m); font-size:9.5px; color:#8fa8d6; letter-spacing:.14em; text-transform:uppercase; }
+
+  #chapters{ display:flex; align-items:center; gap:7px; }
+  .chdot{ width:9px; height:9px; border-radius:50%; background:rgba(255,255,255,.25); border:none; padding:0; cursor:pointer; transition:transform .15s; }
+  .chdot:hover{ transform:scale(1.3); background:rgba(255,255,255,.55); }
+  .chdot.on{ background:#fff; width:22px; border-radius:5px; }
+
+  #custody{ margin-left:auto; display:flex; align-items:center; gap:10px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18); padding:8px 16px 8px 8px; border-radius:99px; backdrop-filter:blur(6px); }
+  #custody .cu-label{ font-family:var(--font-m); font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:#9db4d4; line-height:1; }
+  #custody .cu-role{ font-family:var(--font-b); font-size:13.5px; font-weight:700; color:#fff; }
+  #custody .cu-dot{ width:30px; height:30px; border-radius:50%; display:grid; place-items:center; flex-shrink:0; }
+
+  #chrome-bottom{ position:absolute; left:0; right:0; bottom:0; height:200px; z-index:80; pointer-events:none;
+    background:linear-gradient(0deg, rgba(2,5,12,.82) 0%, rgba(2,5,12,0) 100%); display:flex; flex-direction:column; justify-content:flex-end; }
+  #caption-wrap{ padding:0 220px 58px; text-align:center; min-height:56px; }
+  #caption-text{ font-family:var(--font-b); font-size:23px; font-weight:600; color:#fff; text-shadow:0 2px 10px rgba(0,0,0,.5); line-height:1.4; opacity:0; transform:translateY(6px); transition:opacity .35s ease, transform .35s ease; }
+  #caption-text.show{ opacity:1; transform:translateY(0); }
+
+  #controlbar{ position:absolute; left:36px; right:36px; bottom:14px; display:flex; align-items:center; gap:14px; pointer-events:auto; }
+  #progress-track{ flex:1; height:4px; background:rgba(255,255,255,.18); border-radius:4px; overflow:hidden; }
+  #progress-fill{ height:100%; width:0%; background:linear-gradient(90deg,#3763e0,#6a4fd1); border-radius:4px; }
+  .ctlbtn{ width:38px; height:38px; border-radius:10px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.18); display:grid; place-items:center; color:#fff; cursor:pointer; flex-shrink:0; }
+  .ctlbtn:hover{ background:rgba(255,255,255,.2); }
+  .ctlbtn svg{ width:16px; height:16px; }
+  .togglebtn{ display:flex; align-items:center; gap:7px; height:38px; padding:0 13px; border-radius:10px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.18); color:#fff; font-size:12.5px; font-weight:700; font-family:var(--font-b); cursor:pointer; white-space:nowrap; }
+  .togglebtn:hover{ background:rgba(255,255,255,.2); }
+  .togglebtn.off{ opacity:.5; }
+  .togglebtn svg{ width:15px; height:15px; }
+  .scenecount{ font-family:var(--font-m); font-size:12px; color:#c7d6f0; white-space:nowrap; }
+
+  /* ---------- poster ---------- */
+  #poster{ position:absolute; inset:0; z-index:200; background:radial-gradient(ellipse at 50% 30%, #16305e 0%, #060d1c 68%); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:22px; transition:opacity .5s ease; }
+  #poster.hide{ opacity:0; pointer-events:none; }
+  #poster .pk{ width:76px; height:76px; border-radius:20px; background:linear-gradient(145deg,#3763e0,#6a4fd1); display:grid; place-items:center; box-shadow:0 10px 30px rgba(55,99,224,.45); margin-bottom:6px; }
+  #poster h1{ font-family:var(--font-d); font-weight:800; font-size:52px; letter-spacing:-.02em; margin:0; }
+  #poster .ptag{ font-size:19px; color:#b9cbee; max-width:520px; }
+  #playbtn{ margin-top:18px; display:flex; align-items:center; gap:12px; background:#fff; color:var(--navy); font-family:var(--font-d); font-weight:750; font-size:17px; padding:16px 34px; border-radius:99px; border:none; cursor:pointer; box-shadow:0 10px 30px rgba(0,0,0,.35); }
+  #playbtn:hover{ transform:translateY(-1px); box-shadow:0 14px 34px rgba(0,0,0,.4); }
+  #poster .pmeta{ font-family:var(--font-m); font-size:12.5px; color:#7d94c4; letter-spacing:.08em; text-transform:uppercase; margin-top:8px; }
+
+  @media (prefers-reduced-motion: reduce){ *{ animation-duration:.001ms !important; transition-duration:.001ms !important; } }
+</style>
+
+<div id="viewport">
+  <div id="stage">
+
+    <!-- ============ POSTER ============ -->
+    <div id="poster">
+      <div class="pk"><svg width="34" height="34" viewBox="0 0 24 24" fill="none"><path d="M4 4h11l5 5v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z" stroke="#fff" stroke-width="1.6"/><path d="M8 12h8M8 16h8M8 8h4" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+      <h1>Loan Document<br>Management System</h1>
+      <div class="ptag">One Loan. Multiple Users. One Controlled Journey.<br>Follow a single home loan from application to closure — and audit.</div>
+      <button id="playbtn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        Begin the Journey
+      </button>
+      <div class="pmeta">~4 minutes · Voice narration &amp; sound available</div>
+    </div>
+
+    <!-- ============ CHROME ============ -->
+    <div id="chrome-top">
+      <div class="brandmark">
+        <div class="bm-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 4h11l5 5v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z" stroke="#fff" stroke-width="1.8"/></svg></div>
+        <div><div class="bm-text">Loan DMS</div><div class="bm-sub">Journey Mode</div></div>
+      </div>
+      <div id="chapters"></div>
+      <div id="custody">
+        <div class="cu-dot" id="cu-dot"></div>
+        <div><div class="cu-label">Loan custody</div><div class="cu-role" id="cu-role">—</div></div>
+      </div>
+    </div>
+
+    <div id="chrome-bottom">
+      <div id="caption-wrap"><div id="caption-text"></div></div>
+      <div id="controlbar">
+        <button class="ctlbtn" id="btn-prev" title="Previous scene"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg></button>
+        <button class="ctlbtn" id="btn-play" title="Play / Pause"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+        <button class="ctlbtn" id="btn-next" title="Next scene"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 6h2v12h-2zM6 6l8.5 6L6 18z"/></svg></button>
+        <div id="progress-track"><div id="progress-fill"></div></div>
+        <div class="scenecount" id="scenecount">01 / 17</div>
+        <button class="togglebtn" id="btn-voice"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 5V4L8 9H4z"/></svg><span>Voice: On</span></button>
+        <button class="togglebtn" id="btn-sound"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 5V4L8 9H4zm11.5 3a4 4 0 0 0-2-3.46v6.92a4 4 0 0 0 2-3.46z"/></svg><span>Sound: On</span></button>
+      </div>
+    </div>
+
+    <!-- ============ SCENE 1 — Opening / Customer ============ -->
+    <section class="scene dark" id="scene-1" data-title="Customer">
+      <div class="scene-body">
+        <div class="eyebrow reveal">Scene 01 · The Beginning</div>
+        <h1 class="headline reveal">Every Loan Starts<br>With a Customer</h1>
+        <div style="display:flex; align-items:center; gap:56px; margin-top:36px;">
+          <div class="center reveal">
+            <div class="avatar a-customer" style="width:88px;height:88px;font-size:28px;">RK</div>
+            <div style="margin-top:10px; font-weight:700;">Rajesh Kumar</div>
+            <div class="role-pill role-customer" style="margin-top:8px;"><span class="dot" style="background:#9db4d4;"></span>Not a DMS user</div>
+          </div>
+          <div class="arrow-h reveal" style="width:90px;"></div>
+          <div class="center reveal">
+            <div class="card-dark" style="padding:20px 26px;">
+              <div class="eyebrow" style="margin-bottom:8px;">Ottapalam Branch</div>
+              <div style="font-family:var(--font-d);font-weight:750;font-size:19px;">Home Loan Application</div>
+              <div class="mono" style="color:#9db4d4; font-size:13px; margin-top:4px;">HL-2026-001245</div>
+            </div>
+          </div>
+        </div>
+        <div class="beat reveal"><span class="k"></span>Rajesh provides his information and documents at the branch — he never logs into the DMS himself.</div>
+      </div>
+    </section>
+
+    <!-- ============ SCENE 2 — Branch User Login ============ -->
+    <section class="scene light" id="scene-2" data-title="Branch Login">
+      <div class="scene-body">
+        <div class="eyebrow reveal">Scene 02 · Branch User Login</div>
+        <h2 class="headline reveal">The Journey Begins Inside the DMS</h2>
+        <div style="display:flex; gap:40px; align-items:flex-start; margin-top:20px;">
+          <div class="card login-panel reveal">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+              <div class="avatar sm a-branch">PN</div>
+              <div><div style="font-weight:700;">Priya Nair</div><div style="font-size:12.5px;color:var(--ink-3);">Role: Branch User · Ottapalam Branch</div></div>
+            </div>
+            <div class="lrow"><div class="check"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg></div>Identity verified</div>
+            <div class="lrow"><div class="check"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg></div>Branch authorization confirmed</div>
+            <div style="margin-top:14px;"><span class="badge green">Access Granted ✓</span></div>
+          </div>
+          <div class="card reveal" style="width:360px;">
+            <div class="eyebrow" style="color:var(--brand-dk);">Create / Open Loan</div>
+            <div style="font-family:var(--font-d); font-weight:750; font-size:18px; margin:4px 0 2px;">Rajesh Kumar</div>
+            <div class="mono" style="font-size:13px;color:var(--ink-3);">HL-2026-001245</div>
+            <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--line-2);" class="flow vert">
+              <div class="badge gray">CBS</div><div class="arrow-v" style="height:20px;"></div>
+              <div class="badge blue">Customer &amp; Loan Information</div><div class="arrow-v" style="height:20px;"></div>
+              <div class="badge gray">DMS</div>
+            </div>
+          </div>
+        </div>
+        <div class="beat reveal"><span class="k"></span>Customer and loan information can be auto-populated from CBS.</div>
+      </div>
+    </section>
+
+    <!-- ============ SCENE 3 — Document Capture ============ -->
+    <section class="scene light" id="scene-3" data-title="Document Capture">
+      <div class="scene-body">
+        <div class="eyebrow reveal">Scene 03 · Document Capture</div>
+        <h2 class="headline reveal">Documents Enter the DMS</h2>
+        <div class="stepper reveal" id="capture-stepper" style="margin-top:8px;"></div>
+        <div class="docrow reveal" id="doc-chips" style="margin-top:30px;"></div>
+        <div class="beat reveal"><span class="k"></span>Documents are captured, organized and securely linked to the correct customer and loan.</div>
+      </div>
+    </section>
+
+    <!-- ============ SCENE 4 — Reviewer Login / Handoff ============ -->
+    <section class="scene dark" id="scene-4" data-title="Reviewer">
+      <div class="scene-body">
+        <div class="eyebrow reveal">Scene 04 · Reviewer</div>
+        <div style="display:flex; gap:70px; align-items:center;">
+          <div class="handoff card-dark reveal">
+            <div class="htitle">User Handoff</div>
+            <div class="hrole">Branch User</div>
+            <div class="arrow-v"></div>
+            <div class="hsys">DMS</div>
+            <div class="arrow-v"></div>
+            <div class="hrole">Reviewer</div>
+            <div class="granted">Access Granted ✓</div>
+          </div>
+          <div class="card reveal" style="background:#fff; color:var(--ink); width:460px;">
+            <div class="eyebrow" style="color:var(--brand-dk);">HL-2026-001245 · Document Checklist</div>
+            <div class="checklist" id="review-checklist" style="width:auto; margin-top:10px;"></div>
+          </div>
+        </div>
+        <div class="beat reveal"><span class="k"></span>The Reviewer checks every document against the loan file — one is missing.</div>
+      </div>
+    </section>
+
+    <!-- ============ SCENE 5 — Query ============ -->
+    <section class="scene light" id="scene-5" data-title="Query Raised">
+      <div class="scene-body">
+        <div class="eyebrow reveal">Scene 05 · Query Raised</div>
+        <h2 class="headline reveal">A Question Goes Back to the Branch</h2>
+        <div style="display:flex; gap:44px; align-items:center; margin-top:10px;">
+          <div class="card reveal" style="width:400px;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <div class="mono" style="font-weight:700; color:var(--brand-dk);">QUERY QRY-001</div>
+              <span class="badge amber">Open</span>
+            </div>
+            <div style="margin-top:12px; font-size:13px; color:var(--ink-3);">To</div>
+            <div style="font-weight:700;">Branch User</div>
+            <div style="margin-top:10px; font-size:13px; color:var(--ink-3);">Subject</div>
+            <div style="font-weight:700;">Property Document Required</div>
+            <div style="margin-top:10px; font-size:13px; color:var(--ink-3);">Message</div>
+            <div style="font-size:14.5px; line-height:1.5;">"Please upload the missing property document."</div>
+          </div>
+          <div class="card reveal flow vert" style="width:230px;">
+            <div class="role-pill role-reviewer"><span class="dot" style="background:#7a5300;"></span>Reviewer</div><div class="arrow-v"></div>
+            <div class="badge blue">Query</div><div class="arrow-v"></div>
+            <div class="badge gray">DMS</div><div class="arrow-v"></div>
+            <div class="role-pill role-branch"><span class="dot" style="background:#fff;"></span>Branch User</div>
+          </div>
+        </div>
+        <div class="beat reveal"><span class="k"></span>The Reviewer identifies a missing document and sends a query back to the Branch.</div>
+      </div>
+    </section>
+
+    <!-- ============ SCENE 6 — Branch User Responds ============ -->
+    <section class="scene light" id="scene-6" data-title="Branch Response">
+      <div class="scene-body">
+        <div class="eyebrow reveal">Scene 06 · Branch User Responds</div>
+        <div style="display:flex; gap:30px; align-items:center;">
+          <div class="toast-card reveal">
+            <div class="bell"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3a5 5 0 0 0-5 5v3.3c0 .5-.2 1-.5 1.4L5 15h14l-1.5-2.3a2.2 2.2 0 0 1-.5-1.4V8a5 5 0 0 0-5-5z" stroke="currentColor" stroke-width="1.6"/><circle cx="17.5" cy="6.5" r="3" fill="#d1394f" stroke="#fff"/></svg></div>
+            <div><div class="ttitle">New Query · QRY-001</div><div class="tsub">Property Document Required</div></div>
+          </div>
+          <div class="arrow-h reveal" style="width:60px;"></div>
+          <div class="card reveal" style="width:330px;">
+            <div class="eyebrow" style="color:var(--brand-dk);">Property Document</div>
+            <div class="flow vert" style="align-items:flex-start; margin-top:10px;">
+              <div class="badge blue">Upload</div><div class="arrow-v"></div>
+              <div class="badge gray">DMS</div><div class="arrow-v"></div>
+              <div class="badge amber">Query Response</div>
+            </div>
+            <div style="margin-top:16px; display:flex; gap:8px; flex-wrap:wrap;">
+              <span class="badge green">Document Uploaded ✓</span>
+              <span class="badge green">Response Submitted ✓</span>
+            </div>
+          </div>
+        </div>
+        <div class="flow reveal" style="margin-top:26px; gap:10px;">
+          <span class="role-pill role-branch"><span class="dot" style="background:#fff;"></span>Branch User</span>
+          <div class="arrow-h" style="width:44px;"></div>
+          <span class="badge gray">DMS</span>
+          <div class="arrow-h" style="width:44px;"></div>
+          <span class="role-pill role-reviewer"><span class="dot" style="background:#7a5300;"></span>Reviewer</span>
+        </div>
+        <div class="beat reveal"><span class="k"></span>The Branch User uploads the missing document and sends the response back for review.</div>
+      </div>
+    </section>
+
+    <!-- ============ SCENE 7 — Reviewer Re-checks ============ -->
+    <section class="scene light" id="scene-7" data-title="Query Closed">
+      <div class="scene-body">
+        <div class="eyebrow reveal">Scene 07 · Reviewer Reviews Again</div>
+        <h2 class="headline reveal">Verified, and the Query is Closed</h2>
+        <div style="display:flex; gap:40px; align-items:center; margin-top:10px;">
+          <div class="card reveal" style="width:320px;">
+            <div class="eyebrow" style="color:var(--brand-dk);">Property Document</div>
+            <div style="margin-top:8px;"><span class="badge green">✓ Verified</span></div>
+            <div style="margin-top:18px; padding-top:14px; border-top:1px solid var(--line-2); display:flex; align-items:center; justify-content:space-between;">
+              <div class="mono" style="font-weight:700;">QRY-001</div>
+              <span class="badge gray">✓ Closed</span>
+            </div>
+          </div>
+          <div class="card reveal center" style="width:220px;">
+            <div class="ring-wrap">
+              <svg width="110" height="110"><circle cx="55" cy="55" r="46" stroke="var(--line-2)" stroke-width="10" fill="none"/><circle id="ring-fg" cx="55" cy="55" r="46" stroke="var(--emerald)" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="289"/></svg>
+              <div class="ring-pct">100%</div>
+            </div>
+            <div style="font-weight:700; margin-top:8px;">Checklist Complete</div>
+          </div>
+        </div>
+        <div class="beat reveal"><span class="k"></span>The Reviewer verifies the new document and closes the query.</div>
+      </div>
+    </section>
+
+    <!-- ============ SCENE 8 — Approver ============ -->
+    <section class="scene dark" id="scene-8" data-title="Approval">
+      <div class="scene-body">
+        <div class="eyebrow reveal">Scene 08 · Approver</div>
+        <div style="display:flex; gap:70px; align-items:center;">
+          <div class="handoff card-dark reveal">
+            <div class="htitle">User Handoff</div>
+            <div class="hrole">Reviewer</div><div class="arrow-v"></div>
+            <div class="hsys">DMS</div><div class="arrow-v"></div>
+            <div class="hrole">Approver</div>
+            <div class="granted">Access Granted ✓</div>
+          </div>
+          <div class="card reveal" style="background:#fff; color:var(--ink); width:420px;">
+            <div class="eyebrow" style="color:var(--brand-dk);">HL-2026-001245 · Loan Summary</div>
+            <div style="display:flex; flex-direction:column; gap:9px; margin-top:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;"><span>Documents</span><span class="badge green">Complete ✓</span></div>
+              <div style="display:flex; justify-content:space-between; align-items:center;"><span>Queries</span><span class="badge green">Closed ✓</span></div>
+              <div style="display:flex; justify-content:space-between; align-items:center;"><span>Review</span><span class="badge green">Completed ✓</span></div>
+            </div>
+            <div style="margin-top:18px; padding-top:16px; border-top:1px solid var(--line-2); text-align:center;">
+              <div class="mono" style="font-size:13px; color:var(--ink-3); margin-bottom:8px;">APPROVE LOAN</div>
+              <span class="badge green" style="font-size:16px; padding:8px 20px;">Approved ✓</span>
+            </div>
+          </div>
+        </div>
+        <div class="beat reveal"><span class="k"></span>With documents reviewed and queries resolved, the loan moves to approval.</div>
+      </div>
+    </section>
+
+    <!-- ============ SCENE 9 — Operations ============ -->
+    <section class="scene dark" id="scene-9" data-title="Operations">
+      <div class="scene-body">
+        <div class="eyebrow reveal">Scene 09 · Operations User</div>
+        <div style="display:flex; gap:60px; align-items:center;">
+          <div class="handoff card-dark reveal" style="width:400px; padding:26px 24px;">
+            <div class="htitle">User Handoff</div>
+            <div class="hrole" style="font-size:19px;">Approver</div><div class="arrow-v" style="height:24px;"></div>
+            <div class="hsys">DMS</div><div class="arrow-v" style="height:24px;"></div>
+            <div class="hrole" style="font-size:19px;">Operations</div>
+            <div class="granted">Access Granted ✓</div>
+          </div>
+          <div class="card-dark reveal" style="width:460px;">
+            <div class="eyebrow">Final Verification</div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin:8px 0 14px;">
+              <span class="badge violet">Conditions</span><span class="badge violet">Deferrals</span><span class="badge violet">Pending Actions</span>
+            </div>
+            <div style="font-size:12.5px; color:#9db4d4; font-family:var(--font-m); margin-bottom:14px;">Configured CPA / NOC Process</div>
+            <div style="border-top:1px solid rgba(255,255,255,.14); padding-top:14px; display:flex; flex-direction:column; gap:8px;">
+              <div style="display:flex; justify-content:space-between;">Documents complete <span>✓</span></div>
+              <div style="display:flex; justify-content:space-between;">Approval complete <span>✓</span></div>
+              <div style="display:flex; justify-content:space-between;">Conditions checked <span>✓</span></div>
+            </div>
+            <div style="margin-top:16px; text-align:center; background:var(--emerald); color:#042416; font-weight:800; padding:10px; border-radius:10px; font-family:var(--font-d);">READY FOR DISBURSEMENT</div>
+          </div>
+        </div>
+        <div class="beat reveal"><span class="k"></span>Operations performs the final checks before the loan is released for disbursement.</div>
+      </div>
+    </section>
+
+    <!-- ============ SCENE 10 — CBS / LOS ============ -->
+    <section class="scene dark" id="scene-10" data-title="CBS / LOS">
+      <div class="scene-body">
+        <div class="eyebrow reveal">Scene 10 · System Integration</div>
+        <h2 class="headline reveal">Zooming Out: The DMS in the Enterprise</h2>
+        <div class="flow vert reveal" style="margin-top:20px;">
+          <div class="badge blue" style="font-size:15px; padding:10px 22px;">DMS</div>
+          <div class="arrow-v" style="height:46px;"></div>
+          <div class="badge violet" style="font-size:15px; padding:10px 22px;">CBS / LOS</div>
+          <div class="arrow-v" style="height:46px;"></div>
+          <div class="badge gray" style="font-size:15px; padding:10px 22px;">Loan Status</div>
+        </div>
+        <div class="beat reveal"><span class="k"></span>The DMS can exchange customer and loan information with enterprise systems such as CBS or LOS.</div>
+      </div>
+    </section>
+
+    <!-- ============ SCENE 11 — Disbursement ============ -->
+    <section class="scene dark" id="scene-11" data-title="Disbursement">
+      <div class="scene-body">
+        <div class="eyebrow reveal">Scene 11 · Disbursement</div>
+        <div class="mono reveal" style="color:#9db4d4; font-size:16px; margin-bottom:6px;">HL-2026-001245</div>
+        <h1 class="headline reveal" style="font-size:64px;">Disbursement</h1>
+        <span class="badge green reveal" style="font-size:18px; padding:10px 24px;">✓ Completed</span>
+        <div class="sub reveal" style="margin-top:30px; font-size:22px; font-weight:700; color:#fff;">The DMS journey does not end with disbursement.</div>
+      </div>
+    </section>
+
+    <!-- ============ SCENE 12 — Post-Disbursement ============ -->
+    <section class="scene light" id="scene-12" data-title="Post-Disbursement">
+      <div class="scene-body">
+        <div class="eyebrow reveal">Scene 12 · Post-Disbursement Management</div>
+        <h2 class="headline reveal">The Lifecycle Continues</h2>
+        <div style="display:flex; gap:36px; align-items:center; margin-top:10px;">
+          <div class="card reveal" style="width:440px;">
+            <div class="eyebrow" style="color:var(--brand-dk);">Periodic Documents</div>
+            <div class="checklist" style="width:auto; margin-top:8px;">
+              <div class="cl-row"><div class="cl-icon ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#0a7d56" stroke-width="3" stroke-linecap="round"/></svg></div><div class="cname">Insurance Renewal</div><span class="badge gray">Filed</span></div>
+              <div class="cl-row"><div class="cl-icon warn">!</div><div class="cname">Property Tax Receipt</div><span class="badge amber">Due in 5 days</span></div>
+              <div class="cl-row"><div class="cl-icon ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#0a7d56" stroke-width="3" stroke-linecap="round"/></svg></div><div class="cname">Annual Statement</div><span class="badge gray">Filed</span></div>
+            </div>
+          </div>
+          <div class="card reveal" style="width:300px;">
+            <div class="eyebrow" style="color:var(--brand-dk);">Reminder Sent</div>
+            <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+              <div class="badge blue">📧 Email / Outlook</div>
+              <div class="badge amber">🔔 System Notification</div>
+            </div>
+            <div style="margin-top:14px; font-size:12.5px; color:var(--ink-3);">Escalations follow configured TAT / SLA rules.</div>
+          </div>
+        </div>
+        <div class="beat reveal"><span class="k"></span>After disbursement, documents and actions continue to be tracked throughout the loan lifecycle.</div>
+      </div>
+    </section>
+
+    <!-- ============ SCENE 13 — Management ============ -->
+    <section class="scene light" id="scene-13" data-title="Management">
+      <div class="scene-body" style="padding-top:150px;">
+        <div class="eyebrow reveal">Scene 13 · Management View</div>
+        <h2 class="headline reveal">From One Loan to the Whole Portfolio</h2>
+        <div class="portfolio reveal" id="portfolio" style="margin-top:8px;"></div>
+        <div class="stat-row reveal" id="mgmt-stats" style="margin-top:22px;"></div>
+        <div class="beat reveal"><span class="k"></span>Management gets a consolidated view of documents, pending actions and turnaround times.</div>
+      </div>
+    </section>
+
+    <!-- ============ SCENE 14 — Closure ============ -->
+    <section class="scene dark" id="scene-14" data-title="Closure">
+      <div class="scene-body">
+        <div class="eyebrow reveal">Scene 14 · Loan Closure</div>
+        <h2 class="headline reveal">Rajesh Kumar's Complete Lifecycle</h2>
+        <div class="recap reveal" id="recap-row" style="margin-top:14px;"></div>
+        <div class="reveal" style="margin-top:26px;"><span class="badge" style="background:#fff; color:var(--navy); font-size:19px; padding:12px 28px; font-family:var(--font-d); font-weight:800;">LOAN CLOSED</span></div>
+      </div>
+    </section>
+
+    <!-- ============ SCENE 15 — Auditor ============ -->
+    <section class="scene dark" id="scene-15" data-title="Audit Trail">
+      <div class="scene-body" style="padding-top:76px; justify-content:flex-start;">
+        <div class="eyebrow reveal" style="margin-bottom:6px;">Scene 15 · Auditor</div>
+        <div style="display:flex; align-items:center; gap:18px; margin-bottom:6px;">
+          <span class="role-pill role-audit reveal"><span class="dot" style="background:#fff;"></span>Auditor</span>
+          <span class="mono reveal" style="color:#9db4d4;">searching → HL-2026-001245</span>
+        </div>
+        <h2 class="headline reveal" style="font-size:26px; margin-bottom:10px;">Who Did What, When — Reconstructed</h2>
+        <div class="tl reveal" id="audit-timeline" style="margin-top:0;"></div>
+      </div>
+    </section>
+
+    <!-- ============ SCENE 16 — Migration ============ -->
+    <section class="scene dark" id="scene-16" data-title="Migration">
+      <div class="scene-body">
+        <div class="eyebrow reveal" style="color:#c9b8f5;">Side Story · Not Part of the HL-2026-001245 Journey</div>
+        <h2 class="headline reveal">Bringing Legacy Loans In</h2>
+        <div class="stepper violet reveal" id="migration-stepper" style="margin-top:14px;"></div>
+        <div class="beat reveal"><span class="k" style="background:var(--violet);"></span>Existing active and legacy loan documents can also be brought into the centralized repository.</div>
+      </div>
+    </section>
+
+    <!-- ============ SCENE 17 — Final ============ -->
+    <section class="scene dark" id="scene-17" data-title="The Journey">
+      <div class="scene-body" style="padding-top:110px;">
+        <div class="eyebrow reveal">The Complete Journey</div>
+        <div class="jgrid reveal" style="margin:10px 0 30px;">
+          <div class="jrow-dots" id="journey-dots"></div>
+          <div class="jrow-labels" id="journey-labels"></div>
+        </div>
+        <h1 class="headline reveal" style="font-size:44px;">One Loan.<br>Multiple Users.<br>One Controlled Journey.</h1>
+        <div class="recap reveal" style="margin-top:20px;">
+          <div class="recap-item"><div class="cdone"><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#042416" stroke-width="3.5" stroke-linecap="round"/></svg></div>Centralized Documents</div>
+          <div class="recap-item"><div class="cdone"><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#042416" stroke-width="3.5" stroke-linecap="round"/></svg></div>Controlled Workflows</div>
+          <div class="recap-item"><div class="cdone"><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#042416" stroke-width="3.5" stroke-linecap="round"/></svg></div>Complete Visibility</div>
+          <div class="recap-item"><div class="cdone"><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#042416" stroke-width="3.5" stroke-linecap="round"/></svg></div>Complete Auditability</div>
+        </div>
+        <button class="togglebtn reveal" id="btn-restart" style="margin-top:26px; height:44px; padding:0 20px;">↺ Watch Again</button>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+(function(){
+  "use strict";
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------------- stage scaling ---------------- */
+  var stage = document.getElementById('stage');
+  function fitStage(){
+    var s = Math.min(window.innerWidth/1920, window.innerHeight/1080) * 0.97;
+    stage.style.transform = 'scale(' + s + ')';
+  }
+  window.addEventListener('resize', fitStage);
+  fitStage();
+
+  /* ================= CONTENT DATA ================= */
+  var docTypes = [
+    {label:'Application Form', icon:'M6 4h9l4 4v12H6z'},
+    {label:'KYC', icon:'M12 3l7 3v6c0 5-3.4 8.5-7 9.5C8.4 20.5 5 17 5 12V6z'},
+    {label:'Income Documents', icon:'M4 6h16v12H4z M8 10h8 M8 14h5'},
+    {label:'Property Documents', icon:'M4 20V10l8-6 8 6v10z M9 20v-6h6v6'},
+    {label:'Other Loan Documents', icon:'M6 4h12v16H6z M9 8h6 M9 12h6 M9 16h4'}
+  ];
+  var capturePipeline = [
+    {label:'Document', desc:'Physical or digital source'},
+    {label:'Scan / Upload', desc:'Entered into the DMS'},
+    {label:'Classification', desc:'Sorted by document type'},
+    {label:'Metadata', desc:'Linked to customer & loan'},
+    {label:'DMS Repository', desc:'Securely stored'}
+  ];
+  var migrationPipeline = [
+    {label:'Legacy Loans', desc:'Existing active loans'},
+    {label:'Migration', desc:'Bulk transfer initiated'},
+    {label:'Document Mapping', desc:'Matched to loan records'},
+    {label:'Validation', desc:'Checked for completeness'},
+    {label:'Import', desc:'Loaded into the repository'}
+  ];
+  var reviewChecklist = [
+    {name:'Application Form', ok:true},
+    {name:'KYC', ok:true},
+    {name:'Income Documents', ok:true},
+    {name:'Property Documents', ok:false}
+  ];
+  var portfolioLoans = [
+    {id:'HL-2026-001245', name:'Rajesh Kumar', status:'Completed', hi:true},
+    {id:'HL-2026-001198', name:'Anitha Menon', status:'In Review'},
+    {id:'HL-2026-001233', name:'Suresh Pillai', status:'Query Open'},
+    {id:'HL-2026-001256', name:'Divya Warrier', status:'Approved'},
+    {id:'HL-2026-001260', name:'Manoj Kurup', status:'Disbursed'}
+  ];
+  var mgmtStats = [
+    {v:'128', k:'Loans in Process'}, {v:'14', k:'Pending Actions'},
+    {v:'96%', k:'Document Completion'}, {v:'7', k:'Open Queries'}, {v:'2.4d', k:'Avg TAT'}
+  ];
+  var recapSteps = ['Application','Documents','Review','Query','Approval','Disbursement','Post-Disbursement','Closure'];
+  var auditTrail = [
+    {step:'Loan Created', user:'Priya Nair · Branch User', time:'12 Feb 2026, 10:04 AM'},
+    {step:'Documents Captured', user:'Priya Nair · Branch User', time:'12 Feb 2026, 10:22 AM'},
+    {step:'Review Started', user:'Arjun Das · Reviewer', time:'12 Feb 2026, 02:10 PM'},
+    {step:'Query Raised (QRY-001)', user:'Arjun Das · Reviewer', time:'12 Feb 2026, 02:18 PM'},
+    {step:'Document Added', user:'Priya Nair · Branch User', time:'13 Feb 2026, 09:41 AM'},
+    {step:'Query Closed', user:'Arjun Das · Reviewer', time:'13 Feb 2026, 11:05 AM'},
+    {step:'Loan Approved', user:'Lakshmi Iyer · Approver', time:'13 Feb 2026, 03:52 PM'},
+    {step:'Operations Verification', user:'Vishnu Menon · Operations', time:'14 Feb 2026, 09:15 AM'},
+    {step:'Disbursement Completed', user:'System · CBS/LOS', time:'14 Feb 2026, 04:30 PM'},
+    {step:'Post-Disbursement Tracking', user:'Vishnu Menon · Operations', time:'20 May 2026, 08:00 AM'},
+    {step:'Loan Closed', user:'System · Auto-closure', time:'02 Sep 2026, 06:00 PM'}
+  ];
+  var journeyNodes = [
+    {l:'Customer', c:'#9db4d4'},{l:'Branch User', c:'#3763e0'},{l:'Reviewer', c:'#c9820f'},
+    {l:'Branch User', c:'#3763e0'},{l:'Reviewer', c:'#c9820f'},{l:'Approver', c:'#0f9d63'},
+    {l:'Operations', c:'#6a4fd1'},{l:'CBS / LOS', c:'#9db4d4'},{l:'Disbursement', c:'#0f9d63'},
+    {l:'Post-Disb.', c:'#3763e0'},{l:'Management', c:'#0e7c86'},{l:'Closure', c:'#eef2f8'},{l:'Auditor', c:'#8fa8d6'}
+  ];
+
+  function iconSvg(path){
+    return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="'+path+'"/></svg>';
+  }
+  function el(html){ var d=document.createElement('div'); d.innerHTML=html.trim(); return d.firstChild; }
+
+  /* ---------------- build stepper (capture + migration) ---------------- */
+  function buildStepper(containerId, steps){
+    var c = document.getElementById(containerId);
+    steps.forEach(function(s,i){
+      var step = el('<div class="step"><div class="snum">'+(i+1)+'</div><div class="slabel">'+s.label+'</div><div class="sdesc">'+s.desc+'</div></div>');
+      c.appendChild(step);
+      if(i < steps.length-1) c.appendChild(el('<div class="step-connector"></div>'));
+    });
+  }
+  buildStepper('capture-stepper', capturePipeline);
+  buildStepper('migration-stepper', migrationPipeline);
+
+  /* ---------------- doc chips ---------------- */
+  (function(){
+    var c = document.getElementById('doc-chips');
+    docTypes.forEach(function(d){
+      c.appendChild(el('<div class="docchip"><div class="dicon">'+iconSvg(d.icon)+'</div><div class="dname">'+d.label+'</div><span class="badge green" style="width:fit-content;">Received</span></div>'));
+    });
+  })();
+
+  /* ---------------- review checklist ---------------- */
+  (function(){
+    var c = document.getElementById('review-checklist');
+    reviewChecklist.forEach(function(r){
+      var icon = r.ok ? '<div class="cl-icon ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#0a7d56" stroke-width="3" stroke-linecap="round"/></svg></div>' : '<div class="cl-icon warn">!</div>';
+      var badge = r.ok ? '<span class="badge green">Verified</span>' : '<span class="badge amber">Missing</span>';
+      c.appendChild(el('<div class="cl-row">'+icon+'<div class="cname">'+r.name+'</div>'+badge+'</div>'));
+    });
+  })();
+
+  /* ---------------- portfolio + mgmt stats ---------------- */
+  (function(){
+    var c = document.getElementById('portfolio');
+    portfolioLoans.forEach(function(p){
+      var statusColor = p.status==='Completed'?'green':p.status==='Query Open'?'red':p.status==='Approved'?'blue':p.status==='Disbursed'?'violet':'amber';
+      c.appendChild(el('<div class="ploan'+(p.hi?' hi':'')+'"><div class="pid">'+p.id+'</div><div class="pname">'+p.name+'</div><span class="badge '+statusColor+'">'+p.status+'</span></div>'));
+    });
+    var s = document.getElementById('mgmt-stats');
+    mgmtStats.forEach(function(m){ s.appendChild(el('<div class="stat-tile"><div class="v">'+m.v+'</div><div class="k">'+m.k+'</div></div>')); });
+  })();
+
+  /* ---------------- recap row ---------------- */
+  (function(){
+    var c = document.getElementById('recap-row');
+    recapSteps.forEach(function(r){
+      c.appendChild(el('<div class="recap-item"><div class="cdone"><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#042416" stroke-width="3.5" stroke-linecap="round"/></svg></div>'+r+'</div>'));
+    });
+  })();
+
+  /* ---------------- audit timeline ---------------- */
+  (function(){
+    var c = document.getElementById('audit-timeline');
+    auditTrail.forEach(function(a,i){
+      c.appendChild(el(
+        '<div class="tl-item"><div class="tl-rail"><div class="tl-node"></div><div class="tl-line"></div></div>' +
+        '<div class="tl-card"><div class="tl-step">'+(i+1)+'. '+a.step+'</div><div class="tl-user">'+a.user+'</div><div class="tl-time">'+a.time+'</div>' +
+        '<span class="badge green" style="margin-left:auto;">Recorded</span></div></div>'
+      ));
+    });
+  })();
+
+  /* ---------------- journey map (dots row + labels row, aligned by matching column widths) ---------------- */
+  (function(){
+    var dotsC = document.getElementById('journey-dots');
+    var labelsC = document.getElementById('journey-labels');
+    journeyNodes.forEach(function(n,i){
+      dotsC.appendChild(el('<div class="jcol"><div class="jdot" style="background:'+n.c+';"></div></div>'));
+      labelsC.appendChild(el('<div class="jcol"><div class="jlabel">'+n.l+'</div></div>'));
+      if(i < journeyNodes.length-1){
+        dotsC.appendChild(el('<div class="jspace"><div class="jarrow"></div></div>'));
+        labelsC.appendChild(el('<div class="jspace"></div>'));
+      }
+    });
+  })();
+
+  /* ================= SCENE DEFINITIONS ================= */
+  var scenes = [
+    {id:'scene-1', chapter:'Customer', holder:'Customer', holderClass:'role-customer', dur:14000,
+      narration:'Every loan begins with a customer request. From that moment, documents, reviews, approvals and actions must move through the right people.',
+      sfx:['whoosh']},
+    {id:'scene-2', chapter:'Branch Login', holder:'Branch User', holderClass:'role-branch', dur:15000,
+      narration:'The Branch User starts the loan journey inside the DMS. Customer and loan information can be pulled in automatically from the core banking system.',
+      sfx:['whoosh','login']},
+    {id:'scene-3', chapter:'Document Capture', holder:'Branch User', holderClass:'role-branch', dur:16000,
+      narration:'Documents are captured, organized and securely linked to the correct customer and loan.',
+      sfx:['whoosh','upload']},
+    {id:'scene-4', chapter:'Reviewer', holder:'Reviewer', holderClass:'role-reviewer', dur:16000,
+      narration:'Once the documents are submitted, the loan moves to the Reviewer, who checks every document against the loan file — and finds one missing.',
+      sfx:['whoosh','login']},
+    {id:'scene-5', chapter:'Query Raised', holder:'Reviewer', holderClass:'role-reviewer', dur:14000,
+      narration:'The Reviewer raises a query and sends it back to the Branch, asking for the missing property document.',
+      sfx:['whoosh','alert']},
+    {id:'scene-6', chapter:'Branch Response', holder:'Branch User', holderClass:'role-branch', dur:15000,
+      narration:'The Branch User receives the query, uploads the missing document, and sends the response back for review.',
+      sfx:['whoosh','upload']},
+    {id:'scene-7', chapter:'Query Closed', holder:'Reviewer', holderClass:'role-reviewer', dur:13000,
+      narration:'The Reviewer verifies the new document and closes the query. The checklist is now complete.',
+      sfx:['whoosh','approve']},
+    {id:'scene-8', chapter:'Approval', holder:'Approver', holderClass:'role-approver', dur:15000,
+      narration:'With documents reviewed and queries resolved, the loan moves to approval.',
+      sfx:['whoosh','approve']},
+    {id:'scene-9', chapter:'Operations', holder:'Operations', holderClass:'role-ops', dur:15000,
+      narration:'Operations performs the final checks — conditions, deferrals and pending actions — before the loan is released for disbursement.',
+      sfx:['whoosh','login']},
+    {id:'scene-10', chapter:'CBS / LOS', holder:'System', holderClass:'role-system', dur:11000,
+      narration:'The DMS can exchange customer and loan information with enterprise systems such as CBS or LOS.',
+      sfx:['whoosh']},
+    {id:'scene-11', chapter:'Disbursement', holder:'System', holderClass:'role-system', dur:10000,
+      narration:'The loan is disbursed. But the DMS journey does not end here.',
+      sfx:['whoosh','approve']},
+    {id:'scene-12', chapter:'Post-Disbursement', holder:'Operations', holderClass:'role-ops', dur:15000,
+      narration:'After disbursement, documents and actions continue to be tracked throughout the loan lifecycle, with reminders and escalations.',
+      sfx:['whoosh','alert']},
+    {id:'scene-13', chapter:'Management', holder:'Management', holderClass:'role-mgmt', dur:16000,
+      narration:'Management gets a consolidated view of document status, pending actions and turnaround times across every loan.',
+      sfx:['whoosh','login']},
+    {id:'scene-14', chapter:'Closure', holder:'System', holderClass:'role-system', dur:12000,
+      narration:'Rajesh Kumar\'s loan has completed its full lifecycle, from application to closure.',
+      sfx:['whoosh','approve']},
+    {id:'scene-15', chapter:'Audit Trail', holder:'Auditor', holderClass:'role-audit', dur:21000,
+      narration:'The Auditor can reconstruct the entire history of the loan — who did what, and when.',
+      sfx:['whoosh','login']},
+    {id:'scene-16', chapter:'Migration', holder:'System', holderClass:'role-system', dur:13000,
+      narration:'Existing active and legacy loan documents can also be brought into the centralized repository.',
+      sfx:['whoosh']},
+    {id:'scene-17', chapter:'The Journey', holder:'—', holderClass:'role-system', dur:20000,
+      narration:'One loan. Multiple users. One controlled journey. Centralized documents, controlled workflows, complete visibility, complete auditability.',
+      sfx:['whoosh','approve']}
+  ];
+
+  /* ================= chapter dots ================= */
+  var chaptersEl = document.getElementById('chapters');
+  scenes.forEach(function(s,i){
+    var d = document.createElement('button');
+    d.className = 'chdot'; d.title = (i+1)+'. '+s.chapter;
+    d.addEventListener('click', function(){ goTo(i, true); });
+    chaptersEl.appendChild(d);
+  });
+  var chdots = chaptersEl.querySelectorAll('.chdot');
+
+  /* ================= audio (WebAudio, synthesized, no assets) ================= */
+  var actx = null, soundOn = true, voiceOn = true;
+  function ctx(){ if(!actx){ try{ actx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return actx; }
+  function tone(freq, start, dur, type, gain){
+    var a = ctx(); if(!a || !soundOn) return;
+    var o = a.createOscillator(), g = a.createGain();
+    o.type = type||'sine'; o.frequency.value = freq;
+    g.gain.setValueAtTime(0, a.currentTime+start);
+    g.gain.linearRampToValueAtTime(gain||0.05, a.currentTime+start+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime+start+dur);
+    o.connect(g); g.connect(a.destination);
+    o.start(a.currentTime+start); o.stop(a.currentTime+start+dur+0.05);
+  }
+  var sfxLib = {
+    whoosh: function(){ tone(240,0,0.32,'sine',0.03); tone(140,0.05,0.28,'sine',0.02); },
+    login:  function(){ tone(523,0,0.12,'sine',0.045); tone(784,0.12,0.18,'sine',0.045); },
+    upload: function(){ tone(392,0,0.08,'triangle',0.04); tone(587,0.09,0.1,'triangle',0.04); },
+    alert:  function(){ tone(660,0,0.09,'square',0.03); tone(660,0.16,0.09,'square',0.03); },
+    approve:function(){ tone(440,0,0.1,'sine',0.045); tone(660,0.11,0.12,'sine',0.045); tone(880,0.24,0.18,'sine',0.045); }
+  };
+  function playSfx(list){ if(!list) return; list.forEach(function(k){ if(sfxLib[k]) sfxLib[k](); }); }
+
+  /* ================= narration (SpeechSynthesis) ================= */
+  var synth = window.speechSynthesis;
+  var chosenVoice = null;
+  function pickVoice(){
+    if(!synth) return;
+    var vs = synth.getVoices();
+    chosenVoice = vs.find(function(v){ return /en-GB|en-IN|en-US/.test(v.lang) && /Female|Samantha|Google UK English Female/.test(v.name); })
+      || vs.find(function(v){ return /en/.test(v.lang); }) || vs[0];
+  }
+  if(synth){ synth.onvoiceschanged = pickVoice; pickVoice(); }
+  function speak(text){
+    if(!synth || !voiceOn) return;
+    try{
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      if(chosenVoice) u.voice = chosenVoice;
+      u.rate = 0.98; u.pitch = 1.0; u.volume = 1.0;
+      synth.speak(u);
+    }catch(e){}
+  }
+
+  /* ================= player state ================= */
+  var idx = 0, playing = false, timer = null, rafId = null, sceneStart = 0;
+  var sceneEls = scenes.map(function(s){ return document.getElementById(s.id); });
+  var captionEl = document.getElementById('caption-text');
+  var progressFill = document.getElementById('progress-fill');
+  var scenecountEl = document.getElementById('scenecount');
+  var cuDot = document.getElementById('cu-dot'), cuRole = document.getElementById('cu-role');
+
+  function roleDotColor(cls){
+    var map = {'role-customer':'#9db4d4','role-branch':'#3763e0','role-reviewer':'#c9820f','role-approver':'#0f9d63','role-ops':'#6a4fd1','role-mgmt':'#0e7c86','role-audit':'#20458a','role-system':'#6c7d94'};
+    return map[cls] || '#3763e0';
+  }
+
+  function animateIn(sceneEl){
+    var items = sceneEl.querySelectorAll('.reveal');
+    if(reduceMotion || !window.gsap){
+      items.forEach(function(n){ n.style.opacity = 1; });
+      return;
+    }
+    gsap.killTweensOf(items);
+    gsap.fromTo(items, {opacity:0, y:18}, {opacity:1, y:0, duration:0.65, stagger:0.11, ease:'power2.out'});
+    var ring = sceneEl.querySelector('#ring-fg');
+    if(ring){ gsap.fromTo(ring, {strokeDashoffset:289}, {strokeDashoffset:0, duration:1.1, delay:0.5, ease:'power2.out'}); }
+  }
+
+  function goTo(i, userInitiated){
+    if(i < 0) i = 0;
+    if(i >= scenes.length) i = scenes.length - 1;
+    idx = i;
+    sceneEls.forEach(function(el2,j){ el2.classList.toggle('active', j===idx); });
+    chdots.forEach(function(d,j){ d.classList.toggle('on', j===idx); });
+    scenecountEl.textContent = String(idx+1).padStart(2,'0') + ' / ' + scenes.length;
+
+    var s = scenes[idx];
+    cuRole.textContent = s.holder;
+    cuDot.style.background = roleDotColor(s.holderClass);
+
+    captionEl.classList.remove('show');
+    setTimeout(function(){ captionEl.textContent = s.narration; captionEl.classList.add('show'); }, 180);
+
+    animateIn(sceneEls[idx]);
+    playSfx(s.sfx);
+    speak(s.narration);
+
+    sceneStart = performance.now();
+    clearTimeout(timer);
+    if(playing) scheduleAdvance();
+    updateProgressLoop();
+  }
+
+  function scheduleAdvance(){
+    clearTimeout(timer);
+    var s = scenes[idx];
+    timer = setTimeout(function(){
+      if(idx < scenes.length-1){ goTo(idx+1); }
+      else { setPlaying(false); }
+    }, s.dur);
+  }
+
+  function updateProgressLoop(){
+    cancelAnimationFrame(rafId);
+    function frame(){
+      var s = scenes[idx];
+      var elapsed = performance.now() - sceneStart;
+      var pct = Math.min(1, elapsed / s.dur);
+      progressFill.style.width = (pct*100) + '%';
+      if(playing && pct < 1){ rafId = requestAnimationFrame(frame); }
+    }
+    rafId = requestAnimationFrame(frame);
+  }
+
+  var btnPlay = document.getElementById('btn-play');
+  function setPlaying(v){
+    playing = v;
+    btnPlay.innerHTML = playing
+      ? '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+    if(playing){ sceneStart = performance.now() - (parseFloat(progressFill.style.width||'0')/100)*scenes[idx].dur; scheduleAdvance(); updateProgressLoop(); }
+    else { clearTimeout(timer); if(synth) synth.cancel(); }
+  }
+
+  document.getElementById('btn-next').addEventListener('click', function(){ goTo(idx+1); });
+  document.getElementById('btn-prev').addEventListener('click', function(){ goTo(idx-1); });
+  btnPlay.addEventListener('click', function(){ setPlaying(!playing); });
+
+  var btnVoice = document.getElementById('btn-voice');
+  btnVoice.addEventListener('click', function(){
+    voiceOn = !voiceOn;
+    btnVoice.classList.toggle('off', !voiceOn);
+    btnVoice.querySelector('span').textContent = 'Voice: ' + (voiceOn?'On':'Off');
+    if(!voiceOn && synth) synth.cancel(); else speak(scenes[idx].narration);
+    try{ localStorage.setItem('dms_voice', voiceOn?'1':'0'); }catch(e){}
+  });
+  var btnSound = document.getElementById('btn-sound');
+  btnSound.addEventListener('click', function(){
+    soundOn = !soundOn;
+    btnSound.classList.toggle('off', !soundOn);
+    btnSound.querySelector('span').textContent = 'Sound: ' + (soundOn?'On':'Off');
+    try{ localStorage.setItem('dms_sound', soundOn?'1':'0'); }catch(e){}
+  });
+
+  document.getElementById('btn-restart').addEventListener('click', function(){ goTo(0); setPlaying(true); });
+
+  window.addEventListener('keydown', function(e){
+    if(document.getElementById('poster').classList.contains('hide')){
+      if(e.code==='ArrowRight'){ goTo(idx+1); }
+      else if(e.code==='ArrowLeft'){ goTo(idx-1); }
+      else if(e.code==='Space'){ e.preventDefault(); setPlaying(!playing); }
+    }
+  });
+
+  /* ---------------- poster / start ---------------- */
+  document.getElementById('playbtn').addEventListener('click', function(){
+    try{
+      var v = localStorage.getItem('dms_voice'); if(v!==null){ voiceOn = v==='1'; }
+      var sd = localStorage.getItem('dms_sound'); if(sd!==null){ soundOn = sd==='1'; }
+    }catch(e){}
+    btnVoice.classList.toggle('off', !voiceOn); btnVoice.querySelector('span').textContent = 'Voice: ' + (voiceOn?'On':'Off');
+    btnSound.classList.toggle('off', !soundOn); btnSound.querySelector('span').textContent = 'Sound: ' + (soundOn?'On':'Off');
+    ctx();
+    document.getElementById('poster').classList.add('hide');
+    goTo(0);
+    setPlaying(true);
+  });
+
+})();
+</script>
