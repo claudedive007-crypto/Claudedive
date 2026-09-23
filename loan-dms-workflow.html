@@ -1,0 +1,305 @@
+<title>Loan DMS Workflow</title>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --page-bg:#f5f7fb; --surface:#ffffff; --ink:#101826; --ink-2:#4c5c73; --ink-3:#8494ac;
+    --line:#dfe6f0; --line-2:#eef2f8; --edge:#9aabc4; --edge-loop:#c9820f;
+    --role-customer:#64748b; --role-branch:#3763e0; --role-system:#516079;
+    --role-reviewer:#b9760d; --role-approver:#0f9d63; --role-ops:#6a4fd1;
+    --role-mgmt:#0e7c86; --role-audit:#1f3f7a;
+    --tint-a:0.065; --tint-a-strong:0.12;
+    --shadow-s:0 1px 2px rgba(16,24,38,.05), 0 1px 3px rgba(16,24,38,.05);
+    --font-d:'Sora',-apple-system,'Segoe UI',sans-serif;
+    --font-b:'IBM Plex Sans',-apple-system,'Segoe UI',sans-serif;
+    --font-m:'IBM Plex Mono','SF Mono',ui-monospace,monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --page-bg:#0b1220; --surface:#121b2e; --ink:#eef2f8; --ink-2:#aab8cc; --ink-3:#7d8ba0;
+      --line:#243350; --line-2:#1a2740; --edge:#5b6f92; --edge-loop:#e0a23a;
+      --role-customer:#8493ab; --role-branch:#5b82ea; --role-system:#7789a6;
+      --role-reviewer:#e0a23a; --role-approver:#2bbf85; --role-ops:#8a72ea;
+      --role-mgmt:#2ba2ae; --role-audit:#5478c4;
+      --tint-a:0.10; --tint-a-strong:0.18;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --page-bg:#0b1220; --surface:#121b2e; --ink:#eef2f8; --ink-2:#aab8cc; --ink-3:#7d8ba0;
+    --line:#243350; --line-2:#1a2740; --edge:#5b6f92; --edge-loop:#e0a23a;
+    --role-customer:#8493ab; --role-branch:#5b82ea; --role-system:#7789a6;
+    --role-reviewer:#e0a23a; --role-approver:#2bbf85; --role-ops:#8a72ea;
+    --role-mgmt:#2ba2ae; --role-audit:#5478c4;
+    --tint-a:0.10; --tint-a-strong:0.18;
+    color-scheme: dark;
+  }
+  *{box-sizing:border-box;}
+  body{ background:var(--page-bg); color:var(--ink-2); font-family:var(--font-b); margin:0; padding-inline:20px; }
+  .wrap{ max-width:1100px; margin:0 auto; padding-block:36px 60px; }
+  .wrap.wide{ max-width:none; }
+  h1{ font-family:var(--font-d); font-weight:800; font-size:clamp(26px,4vw,36px); color:var(--ink); letter-spacing:-.02em; margin:0 0 8px; text-wrap:balance; }
+  .lede{ font-size:15.5px; line-height:1.6; max-width:700px; color:var(--ink-2); margin:0 0 26px; }
+  .lede b{ color:var(--ink); }
+
+  /* legend */
+  .legend{ display:flex; flex-wrap:wrap; gap:8px 10px; margin-bottom:30px; }
+  .lg-chip{ display:inline-flex; align-items:center; gap:7px; padding:6px 12px 6px 9px; border-radius:99px; background:var(--surface); border:1px solid var(--line); font-size:12px; font-weight:600; color:var(--ink-2); }
+  .lg-dot{ width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+
+  /* diagram scroll container — the ONE element allowed to exceed viewport width */
+  .diagram-scroll{ overflow-x:auto; overflow-y:visible; border:1px solid var(--line); border-radius:14px; background:var(--surface); box-shadow:var(--shadow-s); }
+  .diagram-scroll svg{ display:block; }
+  .scroll-hint{ font-family:var(--font-m); font-size:11px; color:var(--ink-3); letter-spacing:.04em; text-transform:uppercase; margin:10px 2px 0; }
+
+  /* svg-internal styling via classes (no <style> inside the svg fragment itself) */
+  .lane-band{ }
+  .lane-label{ font-family:var(--font-m); font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; }
+  .node-card rect.body{ fill:var(--surface); stroke:var(--line); stroke-width:1.2; }
+  .node-card rect.accent{ }
+  .node-tag{ font-family:var(--font-m); font-size:8.3px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; }
+  .node-title{ font-family:var(--font-b); font-size:11.6px; font-weight:700; fill:var(--ink); }
+  .node-detail{ font-family:var(--font-b); font-size:9.6px; font-weight:400; fill:var(--ink-3); }
+  .term-shape{ fill:var(--ink); }
+  .term-label{ font-family:var(--font-d); font-size:12.5px; font-weight:700; fill:var(--surface); letter-spacing:.04em; }
+  .dia-shape{ fill:var(--surface); stroke:var(--role-reviewer); stroke-width:1.6; }
+  .dia-label{ font-family:var(--font-b); font-size:12px; font-weight:700; fill:var(--ink); }
+  .edge-path{ fill:none; stroke:var(--edge); stroke-width:1.6; }
+  .edge-loop{ fill:none; stroke:var(--edge-loop); stroke-width:1.6; stroke-dasharray:4 3; }
+  .edge-label{ font-family:var(--font-m); font-size:9.5px; font-weight:600; letter-spacing:.03em; }
+  .edge-label.no{ fill:var(--role-approver); }
+  .edge-label.yes{ fill:var(--role-reviewer); }
+  .edge-label.loop{ fill:var(--edge-loop); }
+  .role-customer{ fill:var(--role-customer); } .role-branch{ fill:var(--role-branch); }
+  .role-system{ fill:var(--role-system); } .role-reviewer{ fill:var(--role-reviewer); }
+  .role-approver{ fill:var(--role-approver); } .role-ops{ fill:var(--role-ops); }
+  .role-mgmt{ fill:var(--role-mgmt); } .role-audit{ fill:var(--role-audit); }
+  .role-customer-t{ fill:var(--role-customer); } .role-branch-t{ fill:var(--role-branch); }
+  .role-system-t{ fill:var(--role-system); } .role-reviewer-t{ fill:var(--role-reviewer); }
+  .role-approver-t{ fill:var(--role-approver); } .role-ops-t{ fill:var(--role-ops); }
+  .role-mgmt-t{ fill:var(--role-mgmt); } .role-audit-t{ fill:var(--role-audit); }
+
+  footer{ margin-top:26px; font-size:13px; color:var(--ink-3); max-width:700px; line-height:1.6; }
+</style>
+
+<div class="wrap">
+  <h1>Loan DMS — Process Workflow</h1>
+  <p class="lede">A cross-functional view of the loan document journey: <b>who</b> is at the controls, <b>what</b> they do, and <b>where</b> the loan moves next — from a customer walking into the branch through review, query resolution, approval, disbursement and audit.</p>
+  <div class="legend" id="legend"></div>
+</div>
+
+<div class="wrap wide">
+  <div class="diagram-scroll">
+    <svg id="flow" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Swimlane flowchart of the Loan DMS process across eight roles, from customer initiation through branch capture, review, an optional query loop, approval, operations, disbursement, post-disbursement tracking, management monitoring and auditor retrieval.">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path>
+        </marker>
+      </defs>
+    </svg>
+  </div>
+  <div class="scroll-hint">Scroll to see the full flow →</div>
+</div>
+
+<div class="wrap">
+  <footer>Every <b>Login</b> node is a custody handoff — at each point in this flow, exactly one role holds the loan or document. The dashed amber loop shows a query that comes back unresolved: the Reviewer re-checks it rather than approving blind.</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var SVGNS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, cls){
+    var n = document.createElementNS(SVGNS, tag);
+    if(attrs) for(var k in attrs) n.setAttribute(k, attrs[k]);
+    if(cls) n.setAttribute('class', cls);
+    return n;
+  }
+  function text(x, y, cls, lines, anchor){
+    var t = el('text', {x:x, y:y, 'text-anchor': anchor||'middle'}, cls);
+    lines.forEach(function(line, i){
+      var ts = document.createElementNS(SVGNS,'tspan');
+      ts.setAttribute('x', x); ts.setAttribute('dy', i===0 ? 0 : 12.5);
+      ts.textContent = line;
+      t.appendChild(ts);
+    });
+    return t;
+  }
+
+  /* ---------------- geometry ---------------- */
+  var LANE_W=180, GAP=26, PITCH=LANE_W+GAP, START_X=24;
+  var ROW_TOP=74, ROW_H=136;
+  var NODE_W=170, NODE_H=92, TERM_W=140, TERM_H=48, DIA_W=172, DIA_H=108;
+
+  var lanes = [
+    {key:'customer', label:'Customer', role:'role-customer'},
+    {key:'branch',   label:'Branch User', role:'role-branch'},
+    {key:'system',   label:'DMS Platform', role:'role-system'},
+    {key:'reviewer', label:'Reviewer', role:'role-reviewer'},
+    {key:'approver', label:'Approver', role:'role-approver'},
+    {key:'ops',      label:'Operations', role:'role-ops'},
+    {key:'mgmt',     label:'Management', role:'role-mgmt'},
+    {key:'audit',    label:'Auditor', role:'role-audit'}
+  ];
+  function laneCx(i){ return START_X + i*PITCH + LANE_W/2; }
+  var LAST_ROW = 25;
+  var SVG_W = START_X + lanes.length*PITCH - GAP + START_X;
+  var SVG_H = ROW_TOP + LAST_ROW*ROW_H + DIA_H + 60;
+
+  /* ---------------- nodes ---------------- */
+  var nodes = [
+    {id:'n1', lane:0, row:0,  shape:'terminal', title:['START']},
+    {id:'n2', lane:0, row:1,  shape:'card', title:['Customer / Loan','Initiation'], detail:['Approaches the branch','for a loan']},
+    {id:'n3', lane:1, row:2,  shape:'card', title:['Branch User Login'], detail:['Create/search customer & loan','CBS auto-fill']},
+    {id:'n4', lane:1, row:3,  shape:'card', title:['Document Capture'], detail:['Scan, upload or receive','documents']},
+    {id:'n5', lane:2, row:4,  shape:'card', title:['Classify & Index'], detail:['Document type & metadata','capture']},
+    {id:'n6', lane:2, row:5,  shape:'card', title:['DMS Repository'], detail:['Secure storage, versioning','& linking']},
+    {id:'n7', lane:2, row:6,  shape:'card', title:['Checklist &','Completeness'], detail:['Automated completeness','check']},
+    {id:'n8', lane:3, row:7,  shape:'card', title:['Reviewer Login'], detail:['Verify details, completeness','& compliance']},
+    {id:'n9', lane:3, row:8,  shape:'diamond', title:['Any Issue?']},
+    {id:'n10',lane:4, row:9,  shape:'card', title:['Approval / Sanction'], detail:['Meets sanction criteria']},
+    {id:'n11',lane:3, row:9,  shape:'card', title:['Create Query'], detail:['Missing document,','correction or clarification']},
+    {id:'n12',lane:4, row:10, shape:'card', title:['Approver Login'], detail:['Review · approve/reject','record decision']},
+    {id:'n13',lane:1, row:10, shape:'card', title:['Branch User Login'], detail:['View query · fix & upload','respond']},
+    {id:'n14',lane:4, row:11, shape:'card', title:['Sanction Conditions'], detail:['Conditions, deferrals &','pending items']},
+    {id:'n15',lane:3, row:11, shape:'card', title:['Reviewer Login'], detail:['Re-review · verify fix','close query']},
+    {id:'n16',lane:5, row:12, shape:'card', title:['Final Document','Verification'], detail:['Confirms readiness before','operations sign-off']},
+    {id:'n17',lane:5, row:13, shape:'card', title:['Operations Login'], detail:['Verify documents & conditions','pre-disbursement checks']},
+    {id:'n18',lane:2, row:14, shape:'card', title:['CBS / LOS Update'], detail:['Send data · update &','confirm status']},
+    {id:'n19',lane:5, row:15, shape:'card', title:['Disbursement'], detail:['Funds released to','the customer']},
+    {id:'n20',lane:5, row:16, shape:'card', title:['Post-Disbursement','Tracking'], detail:['Ongoing monitoring begins']},
+    {id:'n21',lane:5, row:17, shape:'card', title:['Branch / Operations','Login'], detail:['Track documents, conditions','& due dates']},
+    {id:'n22',lane:2, row:18, shape:'card', title:['Periodic Document','Management'], detail:['Due/pending docs · reminders','escalations']},
+    {id:'n23',lane:6, row:19, shape:'card', title:['Monitoring &','Reporting'], detail:['Portfolio-level visibility']},
+    {id:'n24',lane:6, row:20, shape:'card', title:['Management Login'], detail:['Dashboards · TAT/SLA','exceptions · RO/CO view']},
+    {id:'n25',lane:5, row:21, shape:'card', title:['Loan Closure'], detail:['Verify conditions &','pending items']},
+    {id:'n26',lane:2, row:22, shape:'card', title:['Archive / Retention'], detail:['Long-term secure','storage']},
+    {id:'n27',lane:7, row:23, shape:'card', title:['Audit / Retrieval'], detail:['History available','for audit']},
+    {id:'n28',lane:7, row:24, shape:'card', title:['Auditor Login'], detail:['Full trail · actions,','approvals & queries']},
+    {id:'n29',lane:7, row:25, shape:'terminal', title:['END']}
+  ];
+  var byId = {}; nodes.forEach(function(n){ byId[n.id]=n; });
+
+  var edges = [
+    {from:'n1',to:'n2'},{from:'n2',to:'n3'},{from:'n3',to:'n4'},{from:'n4',to:'n5'},
+    {from:'n5',to:'n6'},{from:'n6',to:'n7'},{from:'n7',to:'n8'},{from:'n8',to:'n9'},
+    {from:'n9',to:'n10', label:'NO', cls:'no'},{from:'n9',to:'n11', label:'YES', cls:'yes'},
+    {from:'n10',to:'n12'},{from:'n11',to:'n13'},{from:'n12',to:'n14'},{from:'n13',to:'n15'},
+    {from:'n15',to:'n9', loop:true, label:'Unresolved'},
+    {from:'n14',to:'n16'},{from:'n16',to:'n17'},{from:'n17',to:'n18'},{from:'n18',to:'n19'},
+    {from:'n19',to:'n20'},{from:'n20',to:'n21'},{from:'n21',to:'n22'},{from:'n22',to:'n23'},
+    {from:'n23',to:'n24'},{from:'n24',to:'n25'},{from:'n25',to:'n26'},{from:'n26',to:'n27'},
+    {from:'n27',to:'n28'},{from:'n28',to:'n29'}
+  ];
+
+  function anchors(n){
+    var cx = laneCx(n.lane), y = ROW_TOP + n.row*ROW_H, w, h;
+    if(n.shape==='terminal'){ w=TERM_W; h=TERM_H; }
+    else if(n.shape==='diamond'){ w=DIA_W; h=DIA_H; }
+    else { w=NODE_W; h=NODE_H; }
+    return {
+      cx:cx, y:y, w:w, h:h,
+      top:{x:cx, y:y}, bottom:{x:cx, y:y+h},
+      right:{x:cx+w/2, y:y+h/2}, left:{x:cx-w/2, y:y+h/2}, midY:y+h/2
+    };
+  }
+
+  function elbowPath(a,b){
+    var x1=a.bottom.x, y1=a.bottom.y, x2=b.top.x, y2=b.top.y;
+    if(x1===x2) return 'M'+x1+' '+y1+' L'+x2+' '+y2;
+    var my=(y1+y2)/2;
+    return 'M'+x1+' '+y1+' L'+x1+' '+my+' L'+x2+' '+my+' L'+x2+' '+y2;
+  }
+  function loopPath(a,b){
+    var bulgeX = a.right.x + 36;
+    return 'M'+a.right.x+' '+a.midY+' L'+bulgeX+' '+a.midY+' L'+bulgeX+' '+b.midY+' L'+b.right.x+' '+b.midY;
+  }
+
+  var svg = document.getElementById('flow');
+  svg.setAttribute('viewBox', '0 0 '+SVG_W+' '+SVG_H);
+  svg.setAttribute('width', SVG_W);
+  svg.setAttribute('height', SVG_H);
+
+  /* lane bands + headers */
+  var laneLayer = el('g'); svg.appendChild(laneLayer);
+  lanes.forEach(function(l,i){
+    var x = START_X + i*PITCH;
+    laneLayer.appendChild(el('rect', {x:x, y:0, width:LANE_W, height:SVG_H, class:l.role}, 'lane-band'));
+    laneLayer.lastChild.setAttribute('fill-opacity', 'var(--tint-a)');
+    laneLayer.appendChild(el('rect', {x:x, y:0, width:LANE_W, height:4, class:l.role}));
+    var lbl = text(laneCx(i), 30, 'lane-label '+l.role+'-t', [l.label]);
+    laneLayer.appendChild(lbl);
+  });
+
+  /* edges (drawn under nodes) */
+  var edgeLayer = el('g'); svg.appendChild(edgeLayer);
+  edges.forEach(function(e){
+    var a = anchors(byId[e.from]), b = anchors(byId[e.to]);
+    var p, cls;
+    if(e.loop){ p = loopPath(a,b); cls='edge-loop'; }
+    else { p = elbowPath(a,b); cls='edge-path'; }
+    var path = el('path', {d:p, 'marker-end':'url(#arrow)'}, cls);
+    path.style.color = e.loop ? 'var(--edge-loop)' : 'var(--edge)';
+    edgeLayer.appendChild(path);
+    if(e.label){
+      var lx, ly;
+      if(e.loop){ lx = a.right.x + 40; ly = (a.midY+b.midY)/2; }
+      else if(a.bottom.x===b.top.x){ lx = a.bottom.x + 26; ly = (a.bottom.y+b.top.y)/2 + 4; }
+      else { lx = (a.bottom.x+b.top.x)/2; ly = (a.bottom.y+b.top.y)/2 - 6; }
+      var lbl = el('text', {x:lx, y:ly, 'text-anchor':'middle'}, 'edge-label '+(e.cls||'loop'));
+      lbl.textContent = e.label;
+      edgeLayer.appendChild(lbl);
+    }
+  });
+
+  /* nodes */
+  var nodeLayer = el('g'); svg.appendChild(nodeLayer);
+  nodes.forEach(function(n){
+    var a = anchors(n), lane = lanes[n.lane];
+    var g = el('g', {}, n.shape==='card' ? 'node-card' : '');
+    nodeLayer.appendChild(g);
+
+    if(n.shape==='terminal'){
+      g.appendChild(el('rect', {x:a.cx-TERM_W/2, y:a.y, width:TERM_W, height:TERM_H, rx:TERM_H/2}, 'term-shape'));
+      g.appendChild(text(a.cx, a.y+TERM_H/2+4.5, 'term-label', n.title));
+      return;
+    }
+    if(n.shape==='diamond'){
+      var pts = [
+        [a.cx, a.y], [a.cx+DIA_W/2, a.y+DIA_H/2],
+        [a.cx, a.y+DIA_H], [a.cx-DIA_W/2, a.y+DIA_H/2]
+      ].map(function(p){ return p[0]+','+p[1]; }).join(' ');
+      g.appendChild(el('polygon', {points:pts}, 'dia-shape'));
+      g.appendChild(text(a.cx, a.y+DIA_H/2+4, 'dia-label', n.title));
+      return;
+    }
+    // card
+    g.appendChild(el('rect', {x:a.cx-NODE_W/2, y:a.y, width:NODE_W, height:NODE_H, rx:10}, 'body'));
+    g.appendChild(el('rect', {x:a.cx-NODE_W/2, y:a.y, width:5, height:NODE_H, rx:2, class:lane.role}, 'accent'));
+    var tx = a.cx - NODE_W/2 + 14;
+    g.appendChild(text(tx, a.y+15, 'node-tag '+lane.role+'-t', [lane.label.toUpperCase()], 'start'));
+    var titleY = a.y+30;
+    g.appendChild(text(tx, titleY, 'node-title', n.title, 'start'));
+    if(n.detail && n.detail.length){
+      var detailY = titleY + (n.title.length>1 ? 14 : 0) + 15;
+      g.appendChild(text(tx, detailY, 'node-detail', n.detail, 'start'));
+    }
+  });
+
+  /* legend (HTML, outside the svg) */
+  var legend = document.getElementById('legend');
+  lanes.forEach(function(l){
+    var chip = document.createElement('span');
+    chip.className = 'lg-chip';
+    var dot = document.createElement('span');
+    dot.className = 'lg-dot';
+    dot.style.background = 'var(--'+l.role+')';
+    chip.appendChild(dot);
+    chip.appendChild(document.createTextNode(l.label));
+    legend.appendChild(chip);
+  });
+})();
+</script>
