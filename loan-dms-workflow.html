@@ -81,6 +81,7 @@
   .role-system-t{ fill:var(--role-system); } .role-reviewer-t{ fill:var(--role-reviewer); }
   .role-approver-t{ fill:var(--role-approver); } .role-ops-t{ fill:var(--role-ops); }
   .role-mgmt-t{ fill:var(--role-mgmt); } .role-audit-t{ fill:var(--role-audit); }
+  .node-tag.tbc{ fill:var(--edge-loop); }
 
   footer{ margin-top:26px; font-size:13px; color:var(--ink-3); max-width:700px; line-height:1.6; }
 </style>
@@ -130,9 +131,13 @@
   }
 
   /* ---------------- geometry ---------------- */
-  var LANE_W=180, GAP=26, PITCH=LANE_W+GAP, START_X=24;
+  var LANE_W=180, GAP=26, PITCH=LANE_W+GAP, START_X=64;
   var ROW_TOP=74, ROW_H=136;
   var NODE_W=170, NODE_H=92, TERM_W=140, TERM_H=48, DIA_W=172, DIA_H=108;
+  /* START_X carries extra left margin beyond lane 0 for the outer-left
+     "return corridor" used by long-distance backward edges (see
+     loopPathOuter) — nothing is ever drawn there otherwise, so any corridor
+     x between 0 and START_X is collision-free by construction. */
 
   var lanes = [
     {key:'customer', label:'Customer', role:'role-customer'},
@@ -145,54 +150,95 @@
     {key:'audit',    label:'Auditor', role:'role-audit'}
   ];
   function laneCx(i){ return START_X + i*PITCH + LANE_W/2; }
-  var LAST_ROW = 25;
+  var LAST_ROW = 35;
   var SVG_W = START_X + lanes.length*PITCH - GAP + START_X;
   var SVG_H = ROW_TOP + LAST_ROW*ROW_H + DIA_H + 60;
 
-  /* ---------------- nodes ---------------- */
+  /* ---------------- nodes ----------------
+     Stage 1: decision gates + corrections to the original 29 nodes.
+     Original ids are kept stable (row/lane/title/detail updated in place
+     where the stage moves, splits or retitles them); every new node gets a
+     new id (n30+), appended below rather than renumbering the array. */
   var nodes = [
     {id:'n1', lane:0, row:0,  shape:'terminal', title:['START']},
     {id:'n2', lane:0, row:1,  shape:'card', title:['Customer / Loan','Initiation'], detail:['Approaches the branch','for a loan']},
     {id:'n3', lane:1, row:2,  shape:'card', title:['Branch User Login'], detail:['Create/search customer & loan','CBS auto-fill']},
-    {id:'n4', lane:1, row:3,  shape:'card', title:['Document Capture'], detail:['Scan, upload or receive','documents']},
-    {id:'n5', lane:2, row:4,  shape:'card', title:['Classify & Index'], detail:['Document type & metadata','capture']},
-    {id:'n6', lane:2, row:5,  shape:'card', title:['DMS Repository'], detail:['Secure storage, versioning','& linking']},
-    {id:'n7', lane:2, row:6,  shape:'card', title:['Checklist &','Completeness'], detail:['Automated completeness','check']},
-    {id:'n8', lane:3, row:7,  shape:'card', title:['Reviewer Login'], detail:['Verify details, completeness','& compliance']},
-    {id:'n9', lane:3, row:8,  shape:'diamond', title:['Any Issue?']},
-    {id:'n10',lane:4, row:9,  shape:'card', title:['Approval / Sanction'], detail:['Meets sanction criteria']},
-    {id:'n11',lane:3, row:9,  shape:'card', title:['Create Query'], detail:['Missing document,','correction or clarification']},
-    {id:'n12',lane:4, row:10, shape:'card', title:['Approver Login'], detail:['Review · approve/reject','record decision']},
-    {id:'n13',lane:1, row:10, shape:'card', title:['Branch User Login'], detail:['View query · fix & upload','respond']},
-    {id:'n14',lane:4, row:11, shape:'card', title:['Sanction Conditions'], detail:['Conditions, deferrals &','pending items']},
-    {id:'n15',lane:3, row:11, shape:'card', title:['Reviewer Login'], detail:['Re-review · verify fix','close query']},
-    {id:'n16',lane:5, row:12, shape:'card', title:['Final Document','Verification'], detail:['Confirms readiness before','operations sign-off']},
-    {id:'n17',lane:5, row:13, shape:'card', title:['Operations Login'], detail:['Verify documents & conditions','pre-disbursement checks']},
-    {id:'n18',lane:2, row:14, shape:'card', title:['CBS / LOS Update'], detail:['Send data · update &','confirm status']},
-    {id:'n19',lane:5, row:15, shape:'card', title:['Disbursement'], detail:['Funds released to','the customer']},
-    {id:'n20',lane:5, row:16, shape:'card', title:['Post-Disbursement','Tracking'], detail:['Ongoing monitoring begins']},
-    {id:'n21',lane:5, row:17, shape:'card', title:['Branch / Operations','Login'], detail:['Track documents, conditions','& due dates']},
-    {id:'n22',lane:2, row:18, shape:'card', title:['Periodic Document','Management'], detail:['Due/pending docs · reminders','escalations']},
-    {id:'n23',lane:6, row:19, shape:'card', title:['Monitoring &','Reporting'], detail:['Portfolio-level visibility']},
-    {id:'n24',lane:6, row:20, shape:'card', title:['Management Login'], detail:['Dashboards · TAT/SLA','exceptions · RO/CO view']},
-    {id:'n25',lane:5, row:21, shape:'card', title:['Loan Closure'], detail:['Verify conditions &','pending items']},
-    {id:'n26',lane:2, row:22, shape:'card', title:['Archive / Retention'], detail:['Long-term secure','storage']},
-    {id:'n27',lane:7, row:23, shape:'card', title:['Audit / Retrieval'], detail:['History available','for audit']},
-    {id:'n28',lane:7, row:24, shape:'card', title:['Auditor Login'], detail:['Full trail · actions,','approvals & queries']},
-    {id:'n29',lane:7, row:25, shape:'terminal', title:['END']}
+    {id:'n4', lane:1, row:4,  shape:'card', title:['Document Capture'], detail:['Scan, upload or receive','documents']},
+    {id:'n5', lane:2, row:5,  shape:'card', title:['System suggests','type & metadata'], detail:['Auto-suggested, pending','branch confirmation']},
+    {id:'n6', lane:2, row:7,  shape:'card', title:['DMS Repository'], detail:['Secure storage, versioning','& linking']},
+    {id:'n7', lane:2, row:8,  shape:'card', title:['System computes','completeness'], detail:['Checks against','required list']},
+    {id:'n8', lane:3, row:12, shape:'card', title:['Reviewer Login'], detail:['Verify details, completeness','& compliance']},
+    {id:'n9', lane:3, row:13, shape:'diamond', title:['Any Issue?']},
+    {id:'n10',lane:4, row:15, shape:'card', tbc:true, title:['Approval —','approve or return'], detail:['Approve, or return','to Reviewer']},
+    {id:'n11',lane:3, row:14, shape:'card', title:['Create Query'], detail:['Missing document,','correction or clarification']},
+    {id:'n12',lane:4, row:14, shape:'card', title:['Approver Login'], detail:['Review · approve/reject','record decision']},
+    {id:'n13',lane:1, row:15, shape:'card', title:['Branch User Login'], detail:['View query · fix & upload','respond']},
+    {id:'n14',lane:1, row:17, shape:'card', title:['Sanction Conditions'], detail:['Conditions, deferrals &','pending items']},
+    {id:'n15',lane:3, row:16, shape:'card', title:['Reviewer Login'], detail:['Re-review · verify fix','close query']},
+    {id:'n16',lane:5, row:19, shape:'card', title:['Final Document','Verification'], detail:['Confirms readiness before','operations sign-off']},
+    {id:'n17',lane:5, row:18, shape:'card', title:['Operations Login'], detail:['Verify documents & conditions','pre-disbursement checks']},
+    {id:'n18',lane:2, row:21, shape:'card', tbc:true, title:['CBS / LOS Update'], detail:['Send data · update &','confirm status']},
+    {id:'n19',lane:5, row:22, shape:'card', title:['Disbursement'], detail:['Funds released to','the customer']},
+    {id:'n20',lane:5, row:24, shape:'card', title:['Post-Disbursement','Tracking'], detail:['Ongoing monitoring begins']},
+    {id:'n21',lane:5, row:23, shape:'card', title:['Branch / Operations','Login'], detail:['Track documents, conditions','& due dates']},
+    {id:'n22',lane:2, row:25, shape:'card', title:['Periodic Document','Management'], detail:['Due/pending docs · reminders','escalations']},
+    {id:'n23',lane:6, row:27, shape:'card', title:['Monitoring &','Reporting'], detail:['Portfolio-level visibility']},
+    {id:'n24',lane:6, row:26, shape:'card', title:['Management Login'], detail:['Dashboards · TAT/SLA','exceptions · RO/CO view']},
+    {id:'n25',lane:5, row:31, shape:'card', title:['Loan Closure'], detail:['Verify conditions &','pending items']},
+    {id:'n26',lane:2, row:32, shape:'card', tbc:true, title:['Archive / Retention'], detail:['Restricted per policy —','branch access withdrawn']},
+    {id:'n27',lane:7, row:34, shape:'card', title:['Audit / Retrieval'], detail:['History available','for audit']},
+    {id:'n28',lane:7, row:33, shape:'card', title:['Auditor Login'], detail:['Full trail · actions,','approvals & queries']},
+    {id:'n29',lane:7, row:35, shape:'terminal', title:['END']},
+
+    /* new: gates + corrections (Stage 1) */
+    {id:'n30',lane:1, row:3,  shape:'diamond', title:['Found in CBS?']},
+    {id:'n31',lane:2, row:4,  shape:'card', dashed:true, title:['Create customer','in CBS / LOS'], detail:['Loan creation blocked until','customer exists in CBS']},
+    {id:'n32',lane:1, row:6,  shape:'card', title:['Branch confirms','classification'], detail:['Accept or correct','the suggestion']},
+    {id:'n33',lane:1, row:9,  shape:'card', title:['Branch reviews','completeness'], detail:['Confirms nothing','is missing']},
+    {id:'n34',lane:1, row:10, shape:'diamond', title:['All documents','received?']},
+    {id:'n35',lane:1, row:11, shape:'card', title:['Flag missing item,','send with exception'], detail:['Proceeds with a','noted exception']},
+    {id:'n36',lane:4, row:16, shape:'card', tbc:true, title:['Sanction recorded —','conditions created'], detail:['Conditions finalized']},
+    {id:'n37',lane:1, row:18, shape:'card', title:['Request Deferral'], detail:['Reason, new date','& comments']},
+    {id:'n38',lane:4, row:19, shape:'diamond', tbc:true, title:['Deferral','approved?']},
+    {id:'n39',lane:1, row:20, shape:'card', title:['New due date set'], detail:['Continues into','post-disbursement']},
+    {id:'n40',lane:5, row:20, shape:'diamond', title:['Ready for','disbursement?']},
+    {id:'n41',lane:1, row:26, shape:'card', title:['Branch submits','periodic document'], detail:['Uploaded for','periodic review']},
+    {id:'n42',lane:3, row:27, shape:'card', title:['RO verifies'], detail:['Verify submitted','document']},
+    {id:'n43',lane:3, row:28, shape:'card', title:['Verified /','returned'], detail:['Outcome recorded']},
+    {id:'n44',lane:2, row:26, shape:'card', title:['Due'], detail:['Document due','per schedule']},
+    {id:'n45',lane:2, row:27, shape:'card', title:['Reminder sent'], detail:['Notification','to branch']},
+    {id:'n46',lane:2, row:28, shape:'card', title:['Overdue'], detail:['Past due date']},
+    {id:'n47',lane:1, row:29, shape:'card', title:['Branch → RO → CO'], detail:['Escalation path']},
+    {id:'n48',lane:2, row:30, shape:'card', title:['Loan repaid —','status from CBS'], detail:['Triggers closure','eligibility']}
   ];
   var byId = {}; nodes.forEach(function(n){ byId[n.id]=n; });
 
   var edges = [
-    {from:'n1',to:'n2'},{from:'n2',to:'n3'},{from:'n3',to:'n4'},{from:'n4',to:'n5'},
-    {from:'n5',to:'n6'},{from:'n6',to:'n7'},{from:'n7',to:'n8'},{from:'n8',to:'n9'},
-    {from:'n9',to:'n10', label:'NO', cls:'no'},{from:'n9',to:'n11', label:'YES', cls:'yes'},
-    {from:'n10',to:'n12'},{from:'n11',to:'n13'},{from:'n12',to:'n14'},{from:'n13',to:'n15'},
-    {from:'n15',to:'n9', loop:true, label:'Unresolved'},
-    {from:'n14',to:'n16'},{from:'n16',to:'n17'},{from:'n17',to:'n18'},{from:'n18',to:'n19'},
-    {from:'n19',to:'n20'},{from:'n20',to:'n21'},{from:'n21',to:'n22'},{from:'n22',to:'n23'},
-    {from:'n23',to:'n24'},{from:'n24',to:'n25'},{from:'n25',to:'n26'},{from:'n26',to:'n27'},
-    {from:'n27',to:'n28'},{from:'n28',to:'n29'}
+    {from:'n1',to:'n2'},{from:'n2',to:'n3'},{from:'n3',to:'n30'},
+    {from:'n30',to:'n4', label:'YES', cls:'no'},{from:'n30',to:'n31', label:'NO', cls:'yes'},
+    {from:'n31',to:'n30', loop:true, side:'left', label:'Retry'},
+    {from:'n4',to:'n5'},{from:'n5',to:'n32'},{from:'n32',to:'n6'},{from:'n6',to:'n7'},{from:'n7',to:'n33'},
+    {from:'n33',to:'n34'},
+    {from:'n34',to:'n8', label:'YES', cls:'no'},{from:'n34',to:'n35', label:'NO', cls:'yes'},{from:'n35',to:'n8'},
+    {from:'n8',to:'n9'},
+    {from:'n9',to:'n12', label:'Resolved → Approval', cls:'no'},{from:'n9',to:'n11', label:'Unresolved → re-query', cls:'yes'},
+    {from:'n12',to:'n10'},{from:'n11',to:'n13'},
+    {from:'n10',to:'n36'},{from:'n10',to:'n8', loop:true, side:'left', label:'Returned'},
+    {from:'n13',to:'n15'},{from:'n15',to:'n9', loop:true, label:'Unresolved'},
+    {from:'n36',to:'n14'},
+    {from:'n14',to:'n17'},{from:'n14',to:'n37'},
+    {from:'n17',to:'n16'},{from:'n37',to:'n38'},
+    {from:'n16',to:'n40'},
+    {from:'n38',to:'n39', label:'YES', cls:'no'},{from:'n38',to:'n14', loop:true, outerX:32, label:'NO → original due date'},
+    {from:'n40',to:'n18', label:'YES', cls:'no'},{from:'n40',to:'n14', loop:true, outerX:14, label:'Pending items'},
+    {from:'n39',to:'n22'},
+    {from:'n18',to:'n19'},{from:'n19',to:'n21'},{from:'n21',to:'n20'},{from:'n20',to:'n22'},
+    {from:'n22',to:'n41'},{from:'n22',to:'n44'},{from:'n22',to:'n24'},
+    {from:'n41',to:'n42'},{from:'n42',to:'n43'},
+    {from:'n44',to:'n45'},{from:'n45',to:'n46'},{from:'n46',to:'n47'},
+    {from:'n24',to:'n23'},
+    {from:'n43',to:'n48'},{from:'n47',to:'n48'},
+    {from:'n48',to:'n25'},{from:'n25',to:'n26'},{from:'n26',to:'n28'},{from:'n28',to:'n27'},{from:'n27',to:'n29'}
   ];
 
   function anchors(n){
@@ -217,6 +263,19 @@
     var bulgeX = a.right.x + 36;
     return 'M'+a.right.x+' '+a.midY+' L'+bulgeX+' '+a.midY+' L'+bulgeX+' '+b.midY+' L'+b.right.x+' '+b.midY;
   }
+  /* mirror of loopPath for a backward edge whose target sits in an earlier
+     (leftward) lane one or two columns over — same near-bulge idea, flipped */
+  function loopPathLeft(a,b){
+    var bulgeX = a.left.x - 36;
+    return 'M'+a.left.x+' '+a.midY+' L'+bulgeX+' '+a.midY+' L'+bulgeX+' '+b.midY+' L'+b.left.x+' '+b.midY;
+  }
+  /* dedicated routing for backward edges that span several lanes: goes out
+     to a fixed corridor in the empty margin left of lane 0 (see START_X),
+     which nothing else is ever drawn in, so it can't cross any node
+     regardless of how far apart the two rows are */
+  function loopPathOuter(a,b,corridorX){
+    return 'M'+a.left.x+' '+a.midY+' L'+corridorX+' '+a.midY+' L'+corridorX+' '+b.midY+' L'+b.left.x+' '+b.midY;
+  }
 
   var svg = document.getElementById('flow');
   svg.setAttribute('viewBox', '0 0 '+SVG_W+' '+SVG_H);
@@ -239,17 +298,31 @@
   edges.forEach(function(e){
     var a = anchors(byId[e.from]), b = anchors(byId[e.to]);
     var p, cls;
-    if(e.loop){ p = loopPath(a,b); cls='edge-loop'; }
-    else { p = elbowPath(a,b); cls='edge-path'; }
+    if(e.loop){
+      cls='edge-loop';
+      if(e.outerX!==undefined) p = loopPathOuter(a,b,e.outerX);
+      else if(e.side==='left') p = loopPathLeft(a,b);
+      else p = loopPath(a,b);
+    } else {
+      p = elbowPath(a,b); cls='edge-path';
+    }
     var path = el('path', {d:p, 'marker-end':'url(#arrow)'}, cls);
     path.style.color = e.loop ? 'var(--edge-loop)' : 'var(--edge)';
     edgeLayer.appendChild(path);
     if(e.label){
-      var lx, ly;
-      if(e.loop){ lx = a.right.x + 40; ly = (a.midY+b.midY)/2; }
-      else if(a.bottom.x===b.top.x){ lx = a.bottom.x + 26; ly = (a.bottom.y+b.top.y)/2 + 4; }
-      else { lx = (a.bottom.x+b.top.x)/2; ly = (a.bottom.y+b.top.y)/2 - 6; }
-      var lbl = el('text', {x:lx, y:ly, 'text-anchor':'middle'}, 'edge-label '+(e.cls||'loop'));
+      var lx, ly, anchor='middle';
+      if(e.loop && e.outerX!==undefined){ lx = a.left.x - 8; ly = a.midY - 4; anchor='end'; }
+      else if(e.loop && e.side==='left'){ lx = b.left.x - 40; ly = b.midY - 8; }
+      else if(e.loop){ lx = a.right.x + 40; ly = (a.midY+b.midY)/2; }
+      else if(a.bottom.x===b.top.x){ lx = a.bottom.x + 20; ly = b.top.y - 6; }
+      else {
+        /* bias toward the target rather than the exact midpoint: when a node
+           has two outgoing edges (e.g. a decision's two exits), their labels
+           would otherwise both land near the shared source point and collide */
+        var mid = (a.bottom.x+b.top.x)/2, sign = b.top.x>a.bottom.x ? 1 : -1;
+        lx = mid + sign*55; ly = (a.bottom.y+b.top.y)/2 - 6;
+      }
+      var lbl = el('text', {x:lx, y:ly, 'text-anchor':anchor}, 'edge-label '+(e.cls||'loop'));
       lbl.textContent = e.label;
       edgeLayer.appendChild(lbl);
     }
@@ -273,14 +346,20 @@
         [a.cx, a.y+DIA_H], [a.cx-DIA_W/2, a.y+DIA_H/2]
       ].map(function(p){ return p[0]+','+p[1]; }).join(' ');
       g.appendChild(el('polygon', {points:pts}, 'dia-shape'));
-      g.appendChild(text(a.cx, a.y+DIA_H/2+4, 'dia-label', n.title));
+      var dtY = n.title.length>1 ? a.y+DIA_H/2-2 : a.y+DIA_H/2+4;
+      g.appendChild(text(a.cx, dtY, 'dia-label', n.title));
       return;
     }
     // card
-    g.appendChild(el('rect', {x:a.cx-NODE_W/2, y:a.y, width:NODE_W, height:NODE_H, rx:10}, 'body'));
+    var bodyAttrs = {x:a.cx-NODE_W/2, y:a.y, width:NODE_W, height:NODE_H, rx:10};
+    if(n.dashed) bodyAttrs['stroke-dasharray'] = '4 3';
+    g.appendChild(el('rect', bodyAttrs, 'body'));
     g.appendChild(el('rect', {x:a.cx-NODE_W/2, y:a.y, width:5, height:NODE_H, rx:2, class:lane.role}, 'accent'));
     var tx = a.cx - NODE_W/2 + 14;
     g.appendChild(text(tx, a.y+15, 'node-tag '+lane.role+'-t', [lane.label.toUpperCase()], 'start'));
+    if(n.tbc){
+      g.appendChild(text(a.cx+NODE_W/2-4, a.y+15, 'node-tag tbc', ['TBC'], 'end'));
+    }
     var titleY = a.y+30;
     g.appendChild(text(tx, titleY, 'node-title', n.title, 'start'));
     if(n.detail && n.detail.length){
