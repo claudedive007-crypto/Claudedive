@@ -175,7 +175,7 @@
 
   /* ---------- timeline (audit) ---------- */
   .tl{ width:1160px; display:flex; flex-direction:column; gap:0; }
-  .tl-item{ display:flex; gap:16px; padding:6px 0; }
+  .tl-item{ display:flex; gap:16px; padding:6px 0; opacity:0; }
   .tl-rail{ display:flex; flex-direction:column; align-items:center; width:16px; flex-shrink:0; }
   .tl-node{ width:11px; height:11px; border-radius:50%; background:var(--navy-4); border:2.5px solid #6f93d8; flex-shrink:0; }
   .tl-line{ flex:1; width:2px; background:rgba(255,255,255,.18); margin-top:2px; }
@@ -617,7 +617,7 @@
           <span class="mono reveal" style="color:#9db4d4;">searching → HL-2026-001245</span>
         </div>
         <h2 class="headline reveal" style="font-size:26px; margin-bottom:10px;">Who Did What, When — Reconstructed</h2>
-        <div class="tl reveal" id="audit-timeline" style="margin-top:0;"></div>
+        <div class="tl" id="audit-timeline" style="margin-top:0;"></div>
       </div>
     </section>
 
@@ -808,59 +808,62 @@
     });
   })();
 
-  /* ================= SCENE DEFINITIONS ================= */
+  /* ================= SCENE DEFINITIONS =================
+     sfx cues carry an explicit `at` (ms from scene start) so each sound lands
+     when its matching visual actually appears, instead of firing all at once
+     on the cut while the staggered reveal is still unfolding. */
   var scenes = [
     {id:'scene-1', chapter:'Customer', holder:'Customer', holderClass:'role-customer', dur:14000,
       narration:'Every loan begins with a customer request. From that moment, documents, reviews, approvals and actions must move through the right people.',
-      sfx:['whoosh']},
+      sfx:[{type:'whoosh',at:0}]},
     {id:'scene-2', chapter:'Branch Login', holder:'Branch User', holderClass:'role-branch', dur:15000,
       narration:'The Branch User starts the loan journey inside the DMS. Customer and loan information can be pulled in automatically from the core banking system.',
-      sfx:['whoosh','login']},
+      sfx:[{type:'whoosh',at:0},{type:'login',at:700}]},
     {id:'scene-3', chapter:'Document Capture', holder:'Branch User', holderClass:'role-branch', dur:16000,
       narration:'Documents are captured, organized and securely linked to the correct customer and loan.',
-      sfx:['whoosh','upload']},
+      sfx:[{type:'whoosh',at:0},{type:'upload',at:900}]},
     {id:'scene-4', chapter:'Reviewer', holder:'Reviewer', holderClass:'role-reviewer', dur:16000,
       narration:'Once the documents are submitted, the loan moves to the Reviewer, who checks every document against the loan file — and finds one missing.',
-      sfx:['whoosh','login']},
+      sfx:[{type:'whoosh',at:0},{type:'login',at:550}]},
     {id:'scene-5', chapter:'Query Raised', holder:'Reviewer', holderClass:'role-reviewer', dur:14000,
       narration:'The Reviewer raises a query and sends it back to the Branch, asking for the missing property document.',
-      sfx:['whoosh','alert']},
+      sfx:[{type:'whoosh',at:0},{type:'alert',at:750}]},
     {id:'scene-6', chapter:'Branch Response', holder:'Branch User', holderClass:'role-branch', dur:15000,
       narration:'The Branch User receives the query, uploads the missing document, and sends the response back for review.',
-      sfx:['whoosh','upload']},
+      sfx:[{type:'whoosh',at:0},{type:'upload',at:800}]},
     {id:'scene-7', chapter:'Query Closed', holder:'Reviewer', holderClass:'role-reviewer', dur:13000,
       narration:'The Reviewer verifies the new document and closes the query. The checklist is now complete.',
-      sfx:['whoosh','approve']},
+      sfx:[{type:'whoosh',at:0},{type:'approve',at:1500}]},
     {id:'scene-8', chapter:'Approval', holder:'Approver', holderClass:'role-approver', dur:15000,
       narration:'With documents reviewed and queries resolved, the loan moves to approval.',
-      sfx:['whoosh','approve']},
+      sfx:[{type:'whoosh',at:0},{type:'login',at:500},{type:'approve',at:1300}]},
     {id:'scene-9', chapter:'Operations', holder:'Operations', holderClass:'role-ops', dur:15000,
       narration:'Operations performs the final checks — conditions, deferrals and pending actions — before the loan is released for disbursement.',
-      sfx:['whoosh','login']},
+      sfx:[{type:'whoosh',at:0},{type:'login',at:500},{type:'approve',at:1300}]},
     {id:'scene-10', chapter:'CBS / LOS', holder:'System', holderClass:'role-system', dur:11000,
       narration:'The DMS can exchange customer and loan information with enterprise systems such as CBS or LOS.',
-      sfx:['whoosh']},
+      sfx:[{type:'whoosh',at:0},{type:'upload',at:650}]},
     {id:'scene-11', chapter:'Disbursement', holder:'System', holderClass:'role-system', dur:10000,
       narration:'The loan is disbursed. But the DMS journey does not end here.',
-      sfx:['whoosh','approve']},
+      sfx:[{type:'whoosh',at:0},{type:'approve',at:800}]},
     {id:'scene-12', chapter:'Post-Disbursement', holder:'Operations', holderClass:'role-ops', dur:15000,
       narration:'After disbursement, documents and actions continue to be tracked throughout the loan lifecycle, with reminders and escalations.',
-      sfx:['whoosh','alert']},
+      sfx:[{type:'whoosh',at:0},{type:'alert',at:800}]},
     {id:'scene-13', chapter:'Management', holder:'Management', holderClass:'role-mgmt', dur:16000,
       narration:'Management gets a consolidated view of document status, pending actions and turnaround times across every loan.',
-      sfx:['whoosh','login']},
+      sfx:[{type:'whoosh',at:0},{type:'login',at:600}]},
     {id:'scene-14', chapter:'Closure', holder:'System', holderClass:'role-system', dur:12000,
       narration:'Rajesh Kumar\'s loan has completed its full lifecycle, from application to closure.',
-      sfx:['whoosh','approve']},
+      sfx:[{type:'whoosh',at:0},{type:'approve',at:900}]},
     {id:'scene-15', chapter:'Audit Trail', holder:'Auditor', holderClass:'role-audit', dur:21000,
       narration:'The Auditor can reconstruct the entire history of the loan — who did what, and when.',
-      sfx:['whoosh','login']},
+      sfx:[{type:'whoosh',at:0},{type:'login',at:550}]},
     {id:'scene-16', chapter:'Migration', holder:'System', holderClass:'role-system', dur:13000,
       narration:'Existing active and legacy loan documents can also be brought into the centralized repository.',
-      sfx:['whoosh']},
+      sfx:[{type:'whoosh',at:0},{type:'upload',at:900}]},
     {id:'scene-17', chapter:'The Journey', holder:'—', holderClass:'role-system', dur:20000,
       narration:'One loan. Multiple users. One controlled journey. Centralized documents, controlled workflows, complete visibility, complete auditability.',
-      sfx:['whoosh','approve']}
+      sfx:[{type:'whoosh',at:0},{type:'approve',at:1500}]}
   ];
 
   /* ================= chapter dots ================= */
@@ -891,9 +894,22 @@
     login:  function(){ tone(523,0,0.12,'sine',0.045); tone(784,0.12,0.18,'sine',0.045); },
     upload: function(){ tone(392,0,0.08,'triangle',0.04); tone(587,0.09,0.1,'triangle',0.04); },
     alert:  function(){ tone(660,0,0.09,'square',0.03); tone(660,0.16,0.09,'square',0.03); },
-    approve:function(){ tone(440,0,0.1,'sine',0.045); tone(660,0.11,0.12,'sine',0.045); tone(880,0.24,0.18,'sine',0.045); }
+    approve:function(){ tone(440,0,0.1,'sine',0.045); tone(660,0.11,0.12,'sine',0.045); tone(880,0.24,0.18,'sine',0.045); },
+    tick:   function(){ tone(920,0,0.045,'sine',0.02); }
   };
-  function playSfx(list){ if(!list) return; list.forEach(function(k){ if(sfxLib[k]) sfxLib[k](); }); }
+  /* Cues are scheduled at their own `at` offset (ms from scene start) so each
+     sound lands with its matching visual beat rather than all firing on the cut.
+     Timers are tracked so a scene change (manual or auto) cancels anything still
+     pending from the previous scene. */
+  var sfxTimers = [];
+  function clearSfxTimers(){ sfxTimers.forEach(clearTimeout); sfxTimers = []; }
+  function scheduleSfx(cues){
+    if(!cues) return;
+    cues.forEach(function(c){
+      var id = setTimeout(function(){ if(sfxLib[c.type]) sfxLib[c.type](); }, c.at);
+      sfxTimers.push(id);
+    });
+  }
 
   /* ================= narration (SpeechSynthesis) ================= */
   var synth = window.speechSynthesis;
@@ -929,16 +945,25 @@
     return map[cls] || '#3763e0';
   }
 
+  var TL_ROW_BASE = 0.7, TL_ROW_STEP = 0.16; // seconds — must match the tick cues built in goTo()
+
   function animateIn(sceneEl){
     var items = sceneEl.querySelectorAll('.reveal');
+    var rows = sceneEl.querySelectorAll('.tl-item');
     if(reduceMotion || !window.gsap){
       items.forEach(function(n){ n.style.opacity = 1; });
+      rows.forEach(function(n){ n.style.opacity = 1; });
       return;
     }
     gsap.killTweensOf(items);
     gsap.fromTo(items, {opacity:0, y:18}, {opacity:1, y:0, duration:0.65, stagger:0.11, ease:'power2.out'});
     var ring = sceneEl.querySelector('#ring-fg');
     if(ring){ gsap.fromTo(ring, {strokeDashoffset:289}, {strokeDashoffset:0, duration:1.1, delay:0.5, ease:'power2.out'}); }
+    if(rows.length){
+      // audit trail: reveal one entry at a time, paced to match the per-row "tick" sfx cues
+      gsap.killTweensOf(rows);
+      gsap.fromTo(rows, {opacity:0, x:-16}, {opacity:1, x:0, duration:0.4, stagger:TL_ROW_STEP, delay:TL_ROW_BASE, ease:'power2.out'});
+    }
   }
 
   function goTo(i, userInitiated){
@@ -957,7 +982,13 @@
     setTimeout(function(){ captionEl.textContent = s.narration; captionEl.classList.add('show'); }, 180);
 
     animateIn(sceneEls[idx]);
-    playSfx(s.sfx);
+
+    clearSfxTimers();
+    var cues = s.sfx.slice();
+    var tlRows = sceneEls[idx].querySelectorAll('.tl-item');
+    for(var r=0;r<tlRows.length;r++){ cues.push({type:'tick', at:(TL_ROW_BASE + r*TL_ROW_STEP)*1000}); }
+    scheduleSfx(cues);
+
     speak(s.narration);
 
     sceneStart = performance.now();
@@ -994,7 +1025,7 @@
       ? '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>'
       : '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
     if(playing){ sceneStart = performance.now() - (parseFloat(progressFill.style.width||'0')/100)*scenes[idx].dur; scheduleAdvance(); updateProgressLoop(); }
-    else { clearTimeout(timer); if(synth) synth.cancel(); }
+    else { clearTimeout(timer); clearSfxTimers(); if(synth) synth.cancel(); }
   }
 
   document.getElementById('btn-next').addEventListener('click', function(){ goTo(idx+1); });
