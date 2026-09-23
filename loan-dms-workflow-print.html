@@ -1,0 +1,249 @@
+<title>Loan DMS Workflow — Print</title>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#101826; --ink-2:#4c5c73; --ink-3:#8494ac; --line:#dfe6f0; --surface:#ffffff; --page-bg:#e9edf5;
+    --edge:#9aabc4; --edge-loop:#b9760d;
+    --role-customer:#64748b; --role-branch:#3763e0; --role-system:#516079;
+    --role-reviewer:#b9760d; --role-approver:#0f9d63; --role-ops:#6a4fd1;
+    --role-mgmt:#0e7c86; --role-audit:#1f3f7a;
+    --font-d:'Sora',-apple-system,'Segoe UI',sans-serif;
+    --font-b:'IBM Plex Sans',-apple-system,'Segoe UI',sans-serif;
+    --font-m:'IBM Plex Mono','SF Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{ margin:0; background:var(--page-bg); }
+  body{ font-family:var(--font-b); color:var(--ink-2); padding-block:18px; }
+  .page{
+    width:297mm; height:210mm; margin:0 auto 14px; background:var(--surface);
+    box-shadow:0 2px 10px rgba(16,24,38,.15); position:relative; overflow:hidden;
+    page-break-after:always; break-after:page;
+  }
+  .page:last-child{ page-break-after:auto; break-after:auto; margin-bottom:0; }
+  .page svg{ display:block; width:297mm; height:210mm; }
+  @page{ size:A4 landscape; margin:0; }
+  @media print{
+    body{ padding:0; background:#fff; }
+    .page{ box-shadow:none; margin:0; }
+  }
+  .node-tag{ font-family:var(--font-m); font-weight:600; letter-spacing:.02em; text-transform:uppercase; }
+  .node-title{ font-family:var(--font-b); font-weight:700; fill:var(--ink); }
+  .node-detail{ font-family:var(--font-b); font-weight:400; fill:var(--ink-3); }
+  .lane-label{ font-family:var(--font-m); font-weight:600; letter-spacing:.03em; text-transform:uppercase; }
+  .page-eyebrow{ font-family:var(--font-m); font-weight:600; letter-spacing:.08em; text-transform:uppercase; fill:var(--ink-3); }
+  .page-title{ font-family:var(--font-d); font-weight:800; fill:var(--ink); }
+  .page-num{ font-family:var(--font-m); font-weight:500; fill:var(--ink-3); }
+  .term-shape{ fill:var(--ink); }
+  .term-label{ font-family:var(--font-d); font-weight:700; fill:#fff; }
+  .dia-shape{ fill:var(--surface); stroke:var(--role-reviewer); }
+  .dia-label{ font-family:var(--font-b); font-weight:700; fill:var(--ink); }
+  .edge-path{ fill:none; stroke:var(--edge); }
+  .edge-loop{ fill:none; stroke:var(--edge-loop); stroke-dasharray:1.4 1.1; }
+  .edge-label{ font-family:var(--font-m); font-weight:600; }
+  .edge-label.no{ fill:var(--role-approver); } .edge-label.yes{ fill:var(--role-reviewer); } .edge-label.loop{ fill:var(--edge-loop); }
+  .continuity{ font-family:var(--font-m); font-weight:500; font-style:italic; fill:var(--ink-3); }
+  .role-customer{ fill:var(--role-customer);} .role-branch{ fill:var(--role-branch);} .role-system{ fill:var(--role-system);}
+  .role-reviewer{ fill:var(--role-reviewer);} .role-approver{ fill:var(--role-approver);} .role-ops{ fill:var(--role-ops);}
+  .role-mgmt{ fill:var(--role-mgmt);} .role-audit{ fill:var(--role-audit);}
+</style>
+
+<div id="pages"></div>
+
+<script>
+(function(){
+  "use strict";
+  var SVGNS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs){ var n=document.createElementNS(SVGNS,tag); if(attrs) for(var k in attrs) n.setAttribute(k, attrs[k]); return n; }
+  function text(x,y,cls,lines,fs,anchor,weightLH){
+    var t = el('text', {x:x,y:y,'text-anchor':anchor||'middle','font-size':fs});
+    if(cls) t.setAttribute('class', cls);
+    lines.forEach(function(line,i){
+      var ts = document.createElementNS(SVGNS,'tspan');
+      ts.setAttribute('x', x); ts.setAttribute('dy', i===0?0:(weightLH||3.1));
+      ts.textContent = line;
+      t.appendChild(ts);
+    });
+    return t;
+  }
+
+  /* All geometry is authored directly in millimetres: the svg's viewBox uses
+     mm-equivalent units 1:1 with its physical width/height, so print output is
+     exact regardless of screen DPI. */
+  var PAGE_W=297, PAGE_H=210, MARGIN=12;
+  var CW = PAGE_W - MARGIN*2, CH = PAGE_H - MARGIN*2; // content area: 273 x 186
+  var LANE_GAP=6, ROW_TOP=17, ROW_H=24, NODE_W_PAD=8;
+  var NODE_H=18.5, DIA_W=58, DIA_H=22, TERM_W=44, TERM_H=10.5;
+
+  var roleLabel = {customer:'Customer', branch:'Branch User', system:'DMS Platform', reviewer:'Reviewer', approver:'Approver', ops:'Operations', mgmt:'Management', audit:'Auditor'};
+
+  function laneCx(page, i){
+    var n = page.lanes.length;
+    var laneW = (CW - LANE_GAP*(n-1)) / n;
+    page._laneW = laneW;
+    return MARGIN + i*(laneW+LANE_GAP) + laneW/2;
+  }
+
+  function anchors(page, n){
+    var cx = laneCx(page, n.lane), y = MARGIN + ROW_TOP + n.row*ROW_H, w, h;
+    if(n.shape==='terminal'){ w=TERM_W; h=TERM_H; }
+    else if(n.shape==='diamond'){ w=DIA_W; h=DIA_H; }
+    else { w=page._laneW - NODE_W_PAD; h=NODE_H; }
+    return { cx:cx, y:y, w:w, h:h,
+      top:{x:cx,y:y}, bottom:{x:cx,y:y+h},
+      right:{x:cx+w/2,y:y+h/2}, left:{x:cx-w/2,y:y+h/2}, midY:y+h/2 };
+  }
+  function elbow(a,b){
+    var x1=a.bottom.x,y1=a.bottom.y,x2=b.top.x,y2=b.top.y;
+    if(Math.abs(x1-x2)<0.01) return 'M'+x1+' '+y1+' L'+x2+' '+y2;
+    var my=(y1+y2)/2;
+    return 'M'+x1+' '+y1+' L'+x1+' '+my+' L'+x2+' '+my+' L'+x2+' '+y2;
+  }
+  function loop(a,b){
+    var bulgeX = a.right.x + 9;
+    return 'M'+a.right.x+' '+a.midY+' L'+bulgeX+' '+a.midY+' L'+bulgeX+' '+b.midY+' L'+b.right.x+' '+b.midY;
+  }
+
+  function renderPage(page, index, total){
+    var wrap = document.createElement('div'); wrap.className='page';
+    var svg = el('svg', {viewBox:'0 0 '+PAGE_W+' '+PAGE_H, width:PAGE_W+'mm', height:PAGE_H+'mm', xmlns:SVGNS});
+    var defs = el('defs');
+    var marker = el('marker', {id:'arrow'+index, viewBox:'0 0 10 10', refX:8, refY:5, markerWidth:2.6, markerHeight:2.6, orient:'auto-start-reverse'});
+    var mpath = el('path', {d:'M0,0 L10,5 L0,10 z'}); mpath.setAttribute('fill','currentColor');
+    marker.appendChild(mpath); defs.appendChild(marker); svg.appendChild(defs);
+
+    // page header
+    svg.appendChild(text(MARGIN, MARGIN+3, 'page-eyebrow', ['LOAN DMS WORKFLOW'], 3.1, 'start'));
+    svg.appendChild(text(MARGIN, MARGIN+9.5, 'page-title', [page.title], 6.4, 'start'));
+    svg.appendChild(text(PAGE_W-MARGIN, MARGIN+3, 'page-num', ['PAGE '+(index+1)+' OF '+total], 3.1, 'end'));
+
+    // lane headers
+    page.lanes.forEach(function(key,i){
+      var cx = laneCx(page,i);
+      svg.appendChild(text(cx, MARGIN+ROW_TOP-4, 'lane-label role-'+key, [roleLabel[key]], 3.3));
+    });
+
+    var edgeLayer = el('g'); svg.appendChild(edgeLayer);
+    page.edges.forEach(function(e){
+      var a = anchors(page, page._byId[e.from]), b = anchors(page, page._byId[e.to]);
+      var d, cls;
+      if(e.loop){ d = loop(a,b); cls='edge-loop'; } else { d = elbow(a,b); cls='edge-path'; }
+      var p = el('path', {d:d, 'marker-end':'url(#arrow'+index+')'});
+      p.setAttribute('class', cls);
+      p.style.color = e.loop ? 'var(--edge-loop)' : 'var(--edge)';
+      p.setAttribute('stroke-width', 0.5);
+      edgeLayer.appendChild(p);
+      if(e.label){
+        var lx,ly;
+        if(e.loop){ lx=a.right.x+10.5; ly=(a.midY+b.midY)/2; }
+        else if(Math.abs(a.bottom.x-b.top.x)<0.01){ lx=a.bottom.x+6; ly=(a.bottom.y+b.top.y)/2+1; }
+        else { lx=(a.bottom.x+b.top.x)/2; ly=(a.bottom.y+b.top.y)/2-1.4; }
+        var lbl = text(lx, ly, 'edge-label '+(e.cls||'loop'), [e.label], 2.7);
+        edgeLayer.appendChild(lbl);
+      }
+    });
+
+    var nodeLayer = el('g'); svg.appendChild(nodeLayer);
+    page.nodes.forEach(function(n){
+      var a = anchors(page, n), g = el('g');
+      nodeLayer.appendChild(g);
+      if(n.shape==='terminal'){
+        g.appendChild(el('rect', {x:a.cx-TERM_W/2, y:a.y, width:TERM_W, height:TERM_H, rx:TERM_H/2, class:'term-shape'}));
+        g.appendChild(text(a.cx, a.y+TERM_H/2+1.1, 'term-label', n.title, 3.4));
+        return;
+      }
+      if(n.shape==='diamond'){
+        var pts=[[a.cx,a.y],[a.cx+DIA_W/2,a.y+DIA_H/2],[a.cx,a.y+DIA_H],[a.cx-DIA_W/2,a.y+DIA_H/2]].map(function(p){return p[0]+','+p[1];}).join(' ');
+        g.appendChild(el('polygon', {points:pts, class:'dia-shape', 'stroke-width':0.5}));
+        g.appendChild(text(a.cx, a.y+DIA_H/2+1.1, 'dia-label', n.title, 3.1));
+        return;
+      }
+      g.appendChild(el('rect', {x:a.cx-a.w/2, y:a.y, width:a.w, height:NODE_H, rx:1.6, fill:'var(--surface)', stroke:'var(--line)', 'stroke-width':0.35}));
+      g.appendChild(el('rect', {x:a.cx-a.w/2, y:a.y, width:1.4, height:NODE_H, rx:0.6, class:'role-'+n.roleKey}));
+      var tx = a.cx - a.w/2 + 3.2;
+      g.appendChild(text(tx, a.y+3.3, 'node-tag role-'+n.roleKey, [roleLabel[n.roleKey].toUpperCase()], 2.15, 'start'));
+      var titleY = a.y+7.1;
+      g.appendChild(text(tx, titleY, 'node-title', n.title, 3.05, 'start', 3.4));
+      if(n.detail && n.detail.length){
+        var detailY = titleY + (n.title.length>1?3.4:0) + 3.6;
+        g.appendChild(text(tx, detailY, 'node-detail', n.detail, 2.55, 'start', 2.9));
+      }
+    });
+
+    // continuity captions
+    if(page.continuesFrom){
+      svg.appendChild(text(MARGIN, PAGE_H-MARGIN-1.5, 'continuity', ['↑ Continued from: '+page.continuesFrom], 2.6, 'start'));
+    }
+    if(page.continuesTo){
+      svg.appendChild(text(PAGE_W-MARGIN, PAGE_H-MARGIN-1.5, 'continuity', ['Continues to: '+page.continuesTo+' →'], 2.6, 'end'));
+    }
+
+    wrap.appendChild(svg);
+    document.getElementById('pages').appendChild(wrap);
+  }
+
+  /* ---------------- content: 4 phases, all 29 nodes / 29 edges from the master diagram ---------------- */
+  var pages = [
+    { title:'Application & Document Capture', lanes:['customer','branch','system'],
+      continuesTo:'Reviewer Login',
+      nodes:[
+        {id:'n1', lane:0, row:0, shape:'terminal', title:['START']},
+        {id:'n2', lane:0, row:1, shape:'card', roleKey:'customer', title:['Customer / Loan Initiation'], detail:['Approaches the branch for a loan']},
+        {id:'n3', lane:1, row:2, shape:'card', roleKey:'branch', title:['Branch User Login'], detail:['Create/search customer & loan · CBS auto-fill']},
+        {id:'n4', lane:1, row:3, shape:'card', roleKey:'branch', title:['Document Capture'], detail:['Scan, upload or receive documents']},
+        {id:'n5', lane:2, row:4, shape:'card', roleKey:'system', title:['Classify & Index'], detail:['Document type & metadata capture']},
+        {id:'n6', lane:2, row:5, shape:'card', roleKey:'system', title:['DMS Repository'], detail:['Secure storage, versioning & linking']},
+        {id:'n7', lane:2, row:6, shape:'card', roleKey:'system', title:['Checklist & Completeness'], detail:['Automated completeness check']}
+      ],
+      edges:[{from:'n1',to:'n2'},{from:'n2',to:'n3'},{from:'n3',to:'n4'},{from:'n4',to:'n5'},{from:'n5',to:'n6'},{from:'n6',to:'n7'}]
+    },
+    { title:'Review, Query & Sanction', lanes:['reviewer','branch','approver'],
+      continuesFrom:'Checklist & Completeness', continuesTo:'Final Document Verification',
+      nodes:[
+        {id:'n8', lane:0, row:0, shape:'card', roleKey:'reviewer', title:['Reviewer Login'], detail:['Verify details, completeness & compliance']},
+        {id:'n9', lane:0, row:1, shape:'diamond', title:['Any Issue?']},
+        {id:'n10',lane:2, row:2, shape:'card', roleKey:'approver', title:['Approval / Sanction'], detail:['Meets sanction criteria']},
+        {id:'n11',lane:0, row:2, shape:'card', roleKey:'reviewer', title:['Create Query'], detail:['Missing document, correction or clarification']},
+        {id:'n12',lane:2, row:3, shape:'card', roleKey:'approver', title:['Approver Login'], detail:['Review · approve/reject · record decision']},
+        {id:'n13',lane:1, row:3, shape:'card', roleKey:'branch', title:['Branch User Login'], detail:['View query · fix & upload · respond']},
+        {id:'n14',lane:2, row:4, shape:'card', roleKey:'approver', title:['Sanction Conditions'], detail:['Conditions, deferrals & pending items']},
+        {id:'n15',lane:0, row:4, shape:'card', roleKey:'reviewer', title:['Reviewer Login'], detail:['Re-review · verify fix · close query']}
+      ],
+      edges:[{from:'n8',to:'n9'},{from:'n9',to:'n10',label:'NO',cls:'no'},{from:'n9',to:'n11',label:'YES',cls:'yes'},
+        {from:'n10',to:'n12'},{from:'n11',to:'n13'},{from:'n12',to:'n14'},{from:'n13',to:'n15'},
+        {from:'n15',to:'n9', loop:true, label:'Unresolved'}]
+    },
+    { title:'Operations, Disbursement & Tracking', lanes:['ops','system'],
+      continuesFrom:'Sanction Conditions', continuesTo:'Monitoring & Reporting',
+      nodes:[
+        {id:'n16',lane:0, row:0, shape:'card', roleKey:'ops', title:['Final Document Verification'], detail:['Confirms readiness before operations sign-off']},
+        {id:'n17',lane:0, row:1, shape:'card', roleKey:'ops', title:['Operations Login'], detail:['Verify documents & conditions · pre-disbursement checks']},
+        {id:'n18',lane:1, row:2, shape:'card', roleKey:'system', title:['CBS / LOS Update'], detail:['Send data · update & confirm status']},
+        {id:'n19',lane:0, row:3, shape:'card', roleKey:'ops', title:['Disbursement'], detail:['Funds released to the customer']},
+        {id:'n20',lane:0, row:4, shape:'card', roleKey:'ops', title:['Post-Disbursement Tracking'], detail:['Ongoing monitoring begins']},
+        {id:'n21',lane:0, row:5, shape:'card', roleKey:'ops', title:['Branch / Operations Login'], detail:['Track documents, conditions & due dates']},
+        {id:'n22',lane:1, row:6, shape:'card', roleKey:'system', title:['Periodic Document Management'], detail:['Due/pending docs · reminders · escalations']}
+      ],
+      edges:[{from:'n16',to:'n17'},{from:'n17',to:'n18'},{from:'n18',to:'n19'},{from:'n19',to:'n20'},{from:'n20',to:'n21'},{from:'n21',to:'n22'}]
+    },
+    { title:'Monitoring, Closure & Audit', lanes:['mgmt','ops','system','audit'],
+      continuesFrom:'Periodic Document Management',
+      nodes:[
+        {id:'n23',lane:0, row:0, shape:'card', roleKey:'mgmt', title:['Monitoring & Reporting'], detail:['Portfolio-level visibility']},
+        {id:'n24',lane:0, row:1, shape:'card', roleKey:'mgmt', title:['Management Login'], detail:['Dashboards · TAT/SLA · exceptions · RO/CO view']},
+        {id:'n25',lane:1, row:2, shape:'card', roleKey:'ops', title:['Loan Closure'], detail:['Verify conditions & pending items']},
+        {id:'n26',lane:2, row:3, shape:'card', roleKey:'system', title:['Archive / Retention'], detail:['Long-term secure storage']},
+        {id:'n27',lane:3, row:4, shape:'card', roleKey:'audit', title:['Audit / Retrieval'], detail:['History available for audit']},
+        {id:'n28',lane:3, row:5, shape:'card', roleKey:'audit', title:['Auditor Login'], detail:['Full trail · actions, approvals & queries']},
+        {id:'n29',lane:3, row:6, shape:'terminal', title:['END']}
+      ],
+      edges:[{from:'n23',to:'n24'},{from:'n24',to:'n25'},{from:'n25',to:'n26'},{from:'n26',to:'n27'},{from:'n27',to:'n28'},{from:'n28',to:'n29'}]
+    }
+  ];
+
+  pages.forEach(function(p){ p._byId = {}; p.nodes.forEach(function(n){ p._byId[n.id]=n; }); });
+  pages.forEach(function(p, i){ renderPage(p, i, pages.length); });
+})();
+</script>
